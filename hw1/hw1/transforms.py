@@ -12,7 +12,8 @@ class TensorView(object):
     def __call__(self, tensor: torch.Tensor):
         # TODO: Use Tensor.view() to implement the transform.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        return tensor.view(self.view_dims)
+        #raise NotImplementedError()
         # ========================
 
 
@@ -29,7 +30,7 @@ class InvertColors(object):
         """
         # TODO: Invert the colors of the input image.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        return 1-x
         # ========================
 
 
@@ -41,7 +42,14 @@ class FlipUpDown(object):
         """
         # TODO: Flip the input image so that up is down.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        '''
+        C,H,W=x.size()
+        new_tensor=[[[x[c][H-1-h][w].item() for w in range(W)] for h in range(H)] for c in range(C)]
+        new_tensor=torch.tensor(new_tensor)
+        return new_tensor
+        '''
+        return torch.flip(x,[1])
+        #raise NotImplementedError()
         # ========================
 
 
