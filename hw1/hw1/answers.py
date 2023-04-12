@@ -11,19 +11,12 @@ math (delimited with $$).
 part1_q1 = r"""
 **Your answer:**
 
-
-Write your answer using **markdown** and $\LaTeX$:
 1. False - The test set does not relate to the in-sample error, because elements of this set are not trained on. in-sample error is the error on the train set.
 The test set does provide an estimation to the out-of-sample/generalization error.
 2. False - some splits are more useful than the others. Splits should be in such a way that the dijoint sets are sampling homogeneously from the whole data, samples should not have preffered set to be on.
 3. True - cross-validation is done only on the train-set to allow learning parameters while training the model. The test set should never be trained on as it is supposed to be later used as an indicator for the generalization- 
 Testing the accuired model on unseen data.
-4.True - he validation set is used as a 'simulation' for the test set while tuning for parameters during the training, but it is still part of the train-set. 
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+4. True - the validation set is used as a 'simulation' for the test set while tuning for parameters during the training, but it is still part of the train-set. 
 
 """
 
@@ -32,12 +25,10 @@ part1_q2 = r"""
 
 
 Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
-
+The friend's approach FLAWED.
+We shouldn't ever use the test set while training the model, as any choice made with test-set results is considered contaminated.
+Tuning $\lambda$ is part of training the model, thus using the test set to select correct value is flawed.
+Our friend should have used cross-validation using only the test-set to select a correct hyperparameter to restrict the models complexity and thus prevent over fitting, without contaminating the data. 
 """
 
 # ==============
