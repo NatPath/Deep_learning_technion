@@ -29,6 +29,7 @@ The friend's approach FLAWED.
 We shouldn't ever use the test set while training the model, as any choice made with test-set results is considered contaminated.
 Tuning $\lambda$ is part of training the model, thus using the test set to select correct value is flawed.
 Our friend should have used cross-validation using only the test-set to select a correct hyperparameter to restrict the models complexity and thus prevent over fitting, without contaminating the data. 
+
 """
 
 # ==============
