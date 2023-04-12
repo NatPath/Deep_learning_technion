@@ -91,7 +91,13 @@ def l2_dist(x1: Tensor, x2: Tensor):
 
     dists = None
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    x2_t=torch.transpose(x2,0,1)
+    cdots=torch.matmul(x1,x2_t)
+    x1_squared=(x1*x1).sum(dim=-1,keepdim=True)
+    x2_squared=(x2*x2).sum(dim=-1,keepdim=True)
+    dists_squared=x1_squared+x2_squared.t()-2*cdots
+    dists=torch.sqrt(dists_squared)
+
     # ========================
 
     return dists
@@ -111,7 +117,9 @@ def accuracy(y: Tensor, y_pred: Tensor):
     # TODO: Calculate prediction accuracy. Don't use an explicit loop.
     accuracy = None
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    N=y.size()[0]
+    y_diff=y_pred-y
+    accuracy=(N-torch.count_nonzero(y_diff))/N
     # ========================
 
     return accuracy
