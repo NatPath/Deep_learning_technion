@@ -31,12 +31,17 @@ class KNNClassifier(object):
         #     y_train.
         #  2. Save the number of classes as n_classes.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        '''
+        x_train=Tensor([])
+        y_train=Tensor([])
+        for batch in dl_train:
+            x_train=torch.concat([batch[0],x_train],0)
+            y_train=torch.concat([batch[1],y_train],0)
+        '''
+        self.x_train,self.y_train= dataloader_utils.flatten(dl_train)
+        self.n_classes=len(torch.unique(self.y_train))
         # ========================
 
-        self.x_train = x_train
-        self.y_train = y_train
-        self.n_classes = n_classes
         return self
 
     def predict(self, x_test: Tensor):
@@ -63,7 +68,17 @@ class KNNClassifier(object):
             #  - Set y_pred[i] to the most common class among them
             #  - Don't use an explicit loop.
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            values,indices=torch.topk(dist_matrix.t()[i],self.k,largest=False)
+            sub_y=torch.index_select(self.y_train,0,indices)
+            mode_ret=torch.mode(sub_y)
+            y_pred[i]=mode_ret[0].item()
+            #print(y_pred[i])
+            '''
+            bin_count=torch.bincount(sub_y)
+            top_count=torch.topk(bin_count,1)
+            print(top_count)
+            y_pred[i]=torch.topk(bin_count,1)[1][0].data
+            '''
             # ========================
 
         return y_pred
@@ -125,6 +140,20 @@ def accuracy(y: Tensor, y_pred: Tensor):
     return accuracy
 
 
+def create_k_fold(ds_train: Dataset,k):
+    k_folds=[]
+    N=len(ds_train)
+    fold_size=int(np.floor((N/k)))
+    for i in range(k):
+        valid_indices=set(range(i*fold_size,i*fold_size+fold_size))
+        train_indices=set(range(N))-valid_indices
+        train_sampler=torch.utils.data.sampler.SubsetRandomSampler(list(train_indices))
+        valid_sampler=torch.utils.data.sampler.SubsetRandomSampler(list(valid_indices))
+        dl_train=torch.utils.data.DataLoader(ds_train,batch_size=N-fold_size,sampler=train_sampler)
+        dl_valid=torch.utils.data.DataLoader(ds_train,batch_size=fold_size,sampler=valid_sampler)
+        k_folds.append((dl_train,dl_valid))
+    return k_folds
+
 def find_best_k(ds_train: Dataset, k_choices, num_folds):
     """
     Use cross validation to find the best K for the kNN model.
@@ -139,6 +168,7 @@ def find_best_k(ds_train: Dataset, k_choices, num_folds):
 
     accuracies = []
 
+    k_folds=create_k_fold(ds_train,num_folds)
     for i, k in enumerate(k_choices):
         model = KNNClassifier(k)
 
@@ -150,7 +180,15 @@ def find_best_k(ds_train: Dataset, k_choices, num_folds):
         #  random split each iteration), or implement something else.
 
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        acc=[]
+        for j in range(num_folds):
+            dl_train,dl_valid=k_folds[j]
+            model.train(dl_train)
+            x_valid,y_valid_truth=dataloader_utils.flatten(dl_valid)
+            y_valid=model.predict(x_valid)
+            acc.append(accuracy(y_valid_truth,y_valid))
+        accuracies.append(acc)
+        
         # ========================
 
     best_k_idx = np.argmax([np.mean(acc) for acc in accuracies])
