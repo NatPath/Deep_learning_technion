@@ -38,26 +38,23 @@ Our friend should have used cross-validation using only the test-set to select a
 part2_q1 = r"""
 **Your answer:**
 
+From the obtained results of the cv, the extermal value of the accuracy on the test set (which is a proxy to the generalization error)
+was obtained for k=3. Increasing k from 1 to 3 improved generalization and increasing it further leads to a drop in accuracy.
+This is because of how the data is organized, some distributions results with larger k being a more accurate parameter for predictions then others.
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
 
 """
 
 part2_q2 = r"""
 **Your answer:**
 
+1. Training on the entire train-set will favor parameters which are biased toward the data from the trainset and will not necessarily generalize to data outside the train-set.
+To eliminate this bias in the cv method, splitting of the data to folds in such a way that each fold has a different validation set to test the accuracy from the parameter obtained from training the rest of the data.
+In this way the results of the trainings are being tested by data which is not trained on. 
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+2. Choosing of the model should never use the test-set. this is contamination of the method and the results of the accuracy of the test-set will not be a proxy to the generalization error.
+k-fold CV method does not contaminate the train set thus it is better.
+
 
 """
 
