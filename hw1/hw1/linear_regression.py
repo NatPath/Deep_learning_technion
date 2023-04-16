@@ -32,7 +32,7 @@ class LinearRegressor(BaseEstimator, RegressorMixin):
 
         y_pred = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        y_pred=X@self.weights_
         # ========================
 
         return y_pred
@@ -51,7 +51,12 @@ class LinearRegressor(BaseEstimator, RegressorMixin):
 
         w_opt = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        n_features_=X.shape[1]
+        N=X.shape[0]
+        reg=self.reg_lambda*N*np.eye(n_features_)
+        reg[0][0]=1
+        #w_opt=np.linalg.inv(X.T@X/N+self.reg_lambda*np.eye(n_features_))@(X.T@y/N+self.reg_lambda*np.eye(n_features_)@)
+        w_opt=np.linalg.inv(X.T@X+reg)@X.T@y
         # ========================
 
         self.weights_ = w_opt
@@ -100,7 +105,7 @@ class BiasTrickTransformer(BaseEstimator, TransformerMixin):
 
         xb = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        xb=np.hstack((np.ones((X.shape[0],1)),X))
         # ========================
 
         return xb
@@ -163,7 +168,16 @@ def top_correlated_features(df: DataFrame, target_feature, n=5):
     # TODO: Calculate correlations with target and sort features by it
 
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    df_wo_target=df.drop(target_feature,axis=1)
+    feature_vec=df[target_feature].to_numpy()
+    res_arr=[]
+    x_var_sqr=np.sqrt(np.var(feature_vec))
+    for col_name, col_data in df_wo_target.items():
+        res_arr.append((col_name,np.corrcoef(col_data.to_numpy(),feature_vec)[0,1]))
+    res_sorted=sorted(res_arr,key=lambda x:abs(x[1]),reverse=True)
+    top_n_features=[elem[0] for elem in res_sorted[:n]]
+    top_n_corr=[elem[1] for elem in res_sorted[:n]]
+
     # ========================
 
     return top_n_features, top_n_corr
@@ -179,7 +193,7 @@ def mse_score(y: np.ndarray, y_pred: np.ndarray):
 
     # TODO: Implement MSE using numpy.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    mse=np.mean(np.square(y-y_pred))
     # ========================
     return mse
 
@@ -194,7 +208,7 @@ def r2_score(y: np.ndarray, y_pred: np.ndarray):
 
     # TODO: Implement R^2 using numpy.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    r2=1-mse_score(y,y_pred)/mse_score(y,np.mean(y)*np.ones(y.size))
     # ========================
     return r2
 
