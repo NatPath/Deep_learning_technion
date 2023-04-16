@@ -23,8 +23,6 @@ Testing the accuired model on unseen data.
 part1_q2 = r"""
 **Your answer:**
 
-
-Write your answer using **markdown** and $\LaTeX$:
 The friend's approach FLAWED.
 We shouldn't ever use the test set while training the model, as any choice made with test-set results is considered contaminated.
 Tuning $\lambda$ is part of training the model, thus using the test set to select correct value is flawed.
@@ -110,39 +108,52 @@ An equation: $e^{i\pi} -1 = 0$
 part4_q1 = r"""
 **Your answer:**
 
+The ideal residual plot is such that all of the points scatter thinly (with low variance) around y-y_hat=0 for all y_hat, that means that the predictions are close to the ground truth.
+When comparing the residual plot of the 5 features and the last one obtained we can see that in the
+5 features plot there are many more points which are far from the center compared to the last residual plot obtained, in which the points are thicker around 0 (but there are still some which are far from it).
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
 
 """
 
 part4_q2 = r"""
 **Your answer:**
 
+Adding non-linear features to the data increases the expressivity of the model, allowing it to estimate more complex functions as a linear combination of different functions of the features.
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+1.
+It is still a linear regression model, but with feature mapping to a polynomial space.
+When looking at the model after the transformation, the model is just a regular linear regression.
+Although, before the transformations (if we consider the transformation to be part of the model) one could argue that this is not linear regression as the prediction is not a linear function of the features (as it is only after the features are transformed in a certain way).
+
+2.
+There are a few ways we could interpret this question, so we'll give a long answer.
+Any non-linear function F(X) of the original features can be expressed as a function of the features (by definition, complex as it maybe, even if it is non-analytic) which means that if only we could find the correct feature mapping such that
+F(X)=X', we could use the feature X' as a data. Ofcourse this is flawed approach as this is the function we want to learn, and knowing it in advance makes learning it redundant and nonsensical.
+But if there are enough features, and the desired hidden function behaves nicely enough, one could search for the representation of the function in a given basis, a basis which is a function of features.
+Thus leading to an approximation which would become more and more accurate as we increase the number of basis terms, and the weight for each term could be learned with the linear regression model we know.
+An example for such basis is the polynomials, we could do a feature mapping to the polynomials and if we use high enough degree for the polynomials we could estimate to an arbitrary precision any analytical function.
+
+3.
+The decision boundary will transform with the feature mapping induced by the non-linear features when viewed in the original features basis.
+For non-linear feature mapping we'll get a hypersurface which is not necessarily a hyperplane.
+When viewed in the mapped features basis, the decision boundary will still be defined by a hyperplane as W is a vector which defines the hyperplabe (A normal vector defined by the weights and an origin point defined by b).
 
 """
 
 part4_q3 = r"""
 **Your answer:**
 
+1.
+ The optimal hyperparameter value is sometimes to be searched in a large domain, searching wide range of values, as the order of magnitude of the optimal value is unknown.
+Using logspace allows exploring wider range of values, Thus when observing a trend for the implication of different order of magnitudes of the parameters values to the accuracy can allow us to narrow the search in later searches more.
+This is compared to linspace which searches with even skips- thus requires much more points to check results of different orders of magnitude of values. checking more points means longer computation time which can be expensive thus should be avoided.
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+2.
+The model is fitted to the data len(hyper_paremeter1_range)*len(hyperparameter2_range)*k*2
+len(hyper_paremeter1_range)*len(hyperparameter2_range) is the number of parameters sets checked,
+each parameter set is checked as k times (as the number of folds) iwht the training data of the fold and k times with validation data of the fold.
+
+
 
 """
 

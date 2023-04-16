@@ -7,6 +7,7 @@ from sklearn.utils import check_array
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.utils.validation import check_X_y, check_is_fitted
+from sklearn.model_selection import GridSearchCV
 
 
 class LinearRegressor(BaseEstimator, RegressorMixin):
@@ -82,7 +83,15 @@ def fit_predict_dataframe(
     """
     # TODO: Implement according to the docstring description.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    if feature_names==None:
+        X=df.drop(target_name,axis=1)
+    else:
+        X=df[feature_names]
+    X=X.to_numpy()
+    y=df[target_name]
+    y=y.to_numpy()
+
+    y_pred=model.fit_predict(X,y)
     # ========================
     return y_pred
 
@@ -122,7 +131,7 @@ class BostonFeaturesTransformer(BaseEstimator, TransformerMixin):
         # TODO: Your custom initialization, if needed
         # Add any hyperparameters you need and save them as above
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+
         # ========================
 
     def fit(self, X, y=None):
@@ -144,7 +153,23 @@ class BostonFeaturesTransformer(BaseEstimator, TransformerMixin):
 
         X_transformed = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        X=np.array(X)
+        '''
+        I Did try some things, nothing brought better results than a polynomial fit using all of the data features
+
+        #tried also excluding the feature CHAS (index 3)  which didn't look informative when plotted against MEDV #
+        X[:11]=np.exp(X[:11])
+        X[:,6]=np.exp(X[:,6])
+        X[:,7]=np.exp(X[:,7])
+        X[:,12]=1/X[:,12]
+        X[:,0]=1/X[:,0]
+        '''
+        X_t=X.transpose()
+        excluded_indices=[]
+        X_wo_excluded=np.array([element for i,element in enumerate(X_t) if i not in excluded_indices])
+        X_wo_excluded=X_wo_excluded.transpose()
+        X_transformed=PolynomialFeatures(self.degree).fit_transform(X_wo_excluded)
+
         # ========================
 
         return X_transformed
@@ -241,7 +266,19 @@ def cv_best_hyperparams(
     #  - You can use MSE or R^2 as a score.
 
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    accuracies=[]
+    keys=list(model.get_params().keys())
+    parameters={keys[-2]:degree_range,keys[-1]:lambda_range}
+    gridsearch_clf=GridSearchCV(model,parameters,cv=k_folds,scoring='neg_mean_squared_error') 
+    gridsearch_clf.fit(X,y)
+    best_params=gridsearch_clf.best_params_
+    '''
+    for l in lambda_range:
+        for deg in degree_range:
+            scores=sklearn.model_selection.cross_validate(model,X,y,cv=k_folds,scoring=('neg_mean_squared_error'))
+    '''
+
+
     # ========================
 
     return best_params
