@@ -52,27 +52,27 @@ class SVMHingeLoss(ClassifierLoss):
 
         loss = None
         # ====== YOUR CODE: ======
-        # calculate the vector which its ith element is X[i][y[i]]
-        ground_truth_scores=x_scores[range(len(y)),y]
-        #print(ground_truth_scores)
-        ground_truth_scores=ground_truth_scores.unsqueeze(1)
-        # make it a tensor of size N,D with repeat
-        N=x_scores.size()[0]
-        C=x_scores.size()[1]
-        D=x.size()[1]
-        ground_truth_scores_expanded=ground_truth_scores.expand(N,C)
-        margin_loss_mat=x_scores-ground_truth_scores_expanded+self.delta
-        non_negative_elements=margin_loss_mat[margin_loss_mat>0]
-        loss=non_negative_elements.sum()/N-self.delta
+        #raise NotImplementedError()
+        m = x_scores - x_scores[torch.arange(x_scores.shape[0]), y].reshape(-1,1)
         
-
+      
+        delta_matrix =  torch.ones(x_scores.shape) * self.delta
+        
+        delta_matrix[ torch.arange(x_scores.shape[0]), y ] = torch.tensor(0.)
+        
+        m = delta_matrix+m
+        
+        m = torch.max(torch.tensor(0.),m)
+        
+        loss = m.sum()/ x_scores.shape[0]
         # ========================
 
         # TODO: Save what you need for gradient calculation in self.grad_ctx
         # ====== YOUR CODE: ======
-        self.grad_ctx['M']=margin_loss_mat
-        self.grad_ctx['y']=y
-        self.grad_ctx['x']=x
+        #raise NotImplementedError()
+        self.grad_ctx['m'] = m
+        self.grad_ctx['x'] = x
+        self.grad_ctx['y'] = y
         # ========================
 
         return loss
@@ -90,12 +90,19 @@ class SVMHingeLoss(ClassifierLoss):
 
         grad = None
         # ====== YOUR CODE: ======
-        N=self.grad_ctx['y'].size()[0]
-        G= (self.grad_ctx['M']>0).float()
-        G[(torch.tensor(range(N))),self.grad_ctx['y']]=G[(torch.tensor(range(N))),self.grad_ctx['y']]-1*G.sum(dim=1)
-        G=G/N
-        grad=self.grad_ctx['x'].T@G
-
+        #raise NotImplementedError()
+        
+        # Sums only positive
+        G = (self.grad_ctx['m'] > 0).type(torch.float) 
+        
+        # Make minus sum, in the right places
+        G[(torch.arange(G.shape[0]), self.grad_ctx['y'])] = -1*G.sum(dim=1)
+        
+        #divide by N
+        G = G / G.shape[0]
+        
+        #calculate matrix multiplation
+        grad = self.grad_ctx['x'].T.mm(G)
         # ========================
 
         return grad

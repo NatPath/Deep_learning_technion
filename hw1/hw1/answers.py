@@ -62,41 +62,26 @@ k-fold CV method does not contaminate the train set thus it is better.
 # Part 3 answers
 
 part3_q1 = r"""
-**Your answer:**
 
-
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+The value of $\Delta$ scales the weights, and accordingly changes the model. Our aim with $\Delta$ is to guarantee a certain distance between the smaple's prediction to other alternative perdictions. Changing $\Delta$ means changing the $W$   so to reach different weights that assure a certain margin from the boundary the model created and to seprate our samples with a distance from other classes. Hence, $\Delta$ is arbitrarily chosen.
 
 """
 
 part3_q2 = r"""
-**Your answer:**
 
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+1. The model is learning by finding the right hyperplane that will best linearly separate the samples among other predictions. From the plot we can notice that some of the digits which look similar and so some $W$ columns are also similar according to their values and that leads to inaccurate predicitions.
+
+2. My interpretation is similar to KNN according to the premises we make. SVM classifies sample by the argmax value of the scores, the kNN model classifies sample by the majority label of the K most similar images. One different aspect is that linear SVM takes advantage of all the data while kNN saves the entire data but takes advantage only of the neighbours of our sample.
 
 """
 
 part3_q3 = r"""
-**Your answer:**
+1. We can deduce that the learning rate we have chosen for the training set is *good*.
+If the learning rate was too low we wouldn't have seen a nice convergence in these number of epochs. Perhaps we wouldn't have seen any convergence, just constant and slow decline in the loss.
+On the other hand, if the learning rate was too high, the graph might not be monotone decreasing but rather jump up and down around the minimum value.
 
-
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+2. I would say the model is *slightly overfitted* to our training set. After a few iterations the training accuracy is greater the test accuracy. Hence, our hypothesis class might have been too complex that we missed the "sweet spot" between overfitting and underfitting.
 
 """
 

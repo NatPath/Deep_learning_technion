@@ -5,6 +5,8 @@ from torch.utils.data import DataLoader
 
 from .losses import ClassifierLoss
 
+import cs236781.dataloader_utils as dataloader_utils
+
 
 class LinearClassifier(object):
     def __init__(self, n_features, n_classes, weight_std=0.001):
@@ -21,9 +23,10 @@ class LinearClassifier(object):
         #  Create weights tensor of appropriate dimensions
         #  Initialize it from a normal dist with zero mean and the given std.
 
-        self.weights = None
+        #self.weights = None  ## COMMENTED HERE
         # ====== YOUR CODE: ======
-        self.weights=torch.normal(mean=0,std=weight_std*torch.ones(n_features,n_classes))
+        #raise NotImplementedError()
+        self.weights = torch.normal(mean = 0, std = weight_std, size=(n_features, n_classes))
         # ========================
 
     def predict(self, x: Tensor):
@@ -42,13 +45,14 @@ class LinearClassifier(object):
         #  Implement linear prediction.
         #  Calculate the score for each class using the weights and
         #  return the class y_pred with the highest score.
-
-        y_pred, class_scores = None, None
+        
+        class_scores= torch.matmul(x,self.weights)
+        y_pred = [torch.argmax(vec).item() for vec in class_scores]
+        y_pred = torch.tensor(y_pred)
+        y_pred.reshape(-1,)   #### MAKE SURE IT's OKAY
         # ====== YOUR CODE: ======
-        class_scores=x@self.weights
-        y_pred=torch.max(class_scores,1)[1]
+        #raise NotImplementedError()
         # ========================
-
         return y_pred, class_scores
 
     @staticmethod
@@ -65,11 +69,10 @@ class LinearClassifier(object):
         #  calculate accuracy of prediction.
         #  Do not use an explicit loop.
 
-        acc = None
         # ====== YOUR CODE: ======
-        N=y.size()[0]
-        non_zero_elems=torch.nonzero(y-y_pred)
-        acc=1-len(non_zero_elems)/N
+        #raise NotImplementedError()
+        acc = int(torch.eq(y,y_pred).sum())/y.shape[0]
+    
         # ========================
 
         return acc * 100
@@ -105,7 +108,32 @@ class LinearClassifier(object):
             #     using the weight_decay parameter.
 
             # ====== YOUR CODE: ======
+            #raise NotImplementedError()
+                        
+            N, train_acc, train_loss = 0, 0, 0
+
+            reg_term = self.weights.norm().pow(2) * (weight_decay / 2)
             
+            for x, y in dl_train:
+                
+                y_pred, class_scores = self.predict(x)
+                
+                train_loss += loss_fn(x, y, class_scores, y_pred) * y.shape[0] + reg_term
+                
+                grad = loss_fn.grad()
+                
+                self.weights = self.weights - learn_rate * (grad + weight_decay * self.weights)
+                train_acc += self.evaluate_accuracy(y, y_pred) * y.shape[0] 
+
+                N += y.shape[0]
+                
+            train_res.loss.append(train_loss / N)
+            train_res.accuracy.append(train_acc / N)
+            x_valid, y_valid = dataloader_utils.flatten(dl_valid)
+            y_pred, class_scores = self.predict(x_valid)
+            valid_res.loss.append(loss_fn(x_valid, y_valid, class_scores, y_pred))
+            valid_res.accuracy.append(self.evaluate_accuracy(y_valid, y_pred))
+
             # ========================
             print(".", end="")
 
@@ -126,7 +154,21 @@ class LinearClassifier(object):
         #  The output shape should be (n_classes, C, H, W).
 
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        #raise NotImplementedError()
+        """       
+        images = None
+        if (has_bias):
+            image = self.weights[1:]
+        ##w_images=images.T.reshape(self.n_classes,*img_shape)
+        w_images=images.T.reshape(self.n_classes,*img_shape)
+        """
+                
+        images_new = None
+        if (has_bias):
+            # Omitting the bias
+            images_new = self.weights[1:]
+        # Convert tensor to shape  (n_classes, C, H, W)
+        w_images=images_new.T.reshape(self.n_classes,*img_shape)
         # ========================
 
         return w_images
@@ -139,7 +181,10 @@ def hyperparams():
     #  Manually tune the hyperparameters to get the training accuracy test
     #  to pass.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    #raise NotImplementedError()
+    hp['weight_std'] = 0.002
+    hp['learn_rate'] = 0.005
+    hp['weight_decay'] = 0.001
     # ========================
 
     return hp

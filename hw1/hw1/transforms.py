@@ -74,7 +74,10 @@ class BiasTrick(object):
         #  Add a 1 at the beginning of the given tensor's feature dimension.
         #  Hint: See torch.cat().
         # ====== YOUR CODE: ======
-        N_dims=x.size()[:-1]
-        new_x=torch.cat((torch.ones(*N_dims,1,dtype=x.dtype),x),dim=-1)
-        return new_x
+
+        shape_of_vec = tuple(torch.tensor(x.shape[:-1]).tolist()+[1])
+        ones_vec = torch.ones(shape_of_vec,dtype= x.dtype)
+        tensors=(ones_vec,x)
+        return torch.cat(tensors,x.dim()-1)
+    
         # ========================
