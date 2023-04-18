@@ -23,7 +23,7 @@ class LinearClassifier(object):
 
         self.weights = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        self.weights=torch.normal(mean=0,std=weight_std*torch.ones(n_features,n_classes))
         # ========================
 
     def predict(self, x: Tensor):
@@ -45,7 +45,8 @@ class LinearClassifier(object):
 
         y_pred, class_scores = None, None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        class_scores=x@self.weights
+        y_pred=torch.max(class_scores,1)[1]
         # ========================
 
         return y_pred, class_scores
@@ -66,7 +67,9 @@ class LinearClassifier(object):
 
         acc = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        N=y.size()[0]
+        non_zero_elems=torch.nonzero(y-y_pred)
+        acc=1-len(non_zero_elems)/N
         # ========================
 
         return acc * 100
@@ -102,7 +105,7 @@ class LinearClassifier(object):
             #     using the weight_decay parameter.
 
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            
             # ========================
             print(".", end="")
 

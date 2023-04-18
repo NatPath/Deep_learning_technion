@@ -52,12 +52,27 @@ class SVMHingeLoss(ClassifierLoss):
 
         loss = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        # calculate the vector which its ith element is X[i][y[i]]
+        ground_truth_scores=x_scores[range(len(y)),y]
+        #print(ground_truth_scores)
+        ground_truth_scores=ground_truth_scores.unsqueeze(1)
+        # make it a tensor of size N,D with repeat
+        N=x_scores.size()[0]
+        C=x_scores.size()[1]
+        D=x.size()[1]
+        ground_truth_scores_expanded=ground_truth_scores.expand(N,C)
+        margin_loss_mat=x_scores-ground_truth_scores_expanded+self.delta
+        non_negative_elements=margin_loss_mat[margin_loss_mat>0]
+        loss=non_negative_elements.sum()/N-self.delta
+        
+
         # ========================
 
         # TODO: Save what you need for gradient calculation in self.grad_ctx
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        self.grad_ctx['M']=margin_loss_mat
+        self.grad_ctx['y']=y
+        self.grad_ctx['x']=x
         # ========================
 
         return loss
@@ -75,7 +90,12 @@ class SVMHingeLoss(ClassifierLoss):
 
         grad = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        N=self.grad_ctx['y'].size()[0]
+        G= (self.grad_ctx['M']>0).float()
+        G[(torch.tensor(range(N))),self.grad_ctx['y']]=G[(torch.tensor(range(N))),self.grad_ctx['y']]-1*G.sum(dim=1)
+        G=G/N
+        grad=self.grad_ctx['x'].T@G
+
         # ========================
 
         return grad
