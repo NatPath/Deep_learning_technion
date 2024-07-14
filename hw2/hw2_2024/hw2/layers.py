@@ -274,8 +274,8 @@ class Linear(Layer):
         #  Note: You should ACCUMULATE gradients in dw and db.
         # ====== YOUR CODE: ======
         dx = torch.matmul(dout, self.w)
-        self.dw = torch.matmul(torch.transpose(dout, 0, 1), x)
-        self.db = dout
+        self.dw += torch.matmul(torch.transpose(dout, 0, 1), x)
+        self.db += torch.ones_like(self.b) * torch.sum(dout, 0)
         # ========================
 
         return dx
@@ -338,11 +338,14 @@ class CrossEntropyLoss(Layer):
         # TODO: Calculate the gradient w.r.t. the input x.
         # ====== YOUR CODE: ======
         exp_matrix = torch.exp(x)
-        sum_exp = exp_matrix.sum(dim=1, keepdim=True)
-        dx = exp_matrix / sum_exp
+        sum_exp = exp_matrix.sum(dim=1, keepdim = True)
+        sum_exp.expand(x.size())
+        print(exp_matrix.shape)
+        print(sum_exp.shape)
+        dx = torch.div(exp_matrix, sum_exp)
         minuses = torch.zeros_like(x)
         row_indices = torch.arange(x.size(0))
-        minuses[row_indices, y] = -1
+        minuses[range(0,N), y] = -1
         dx += minuses
         dx = torch.mul(dx, dout)
         # ========================
