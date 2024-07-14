@@ -339,15 +339,14 @@ class CrossEntropyLoss(Layer):
         # ====== YOUR CODE: ======
         exp_matrix = torch.exp(x)
         sum_exp = exp_matrix.sum(dim=1, keepdim = True)
-        sum_exp.expand(x.size())
-        print(exp_matrix.shape)
-        print(sum_exp.shape)
+        sum_exp = sum_exp.repeat(1, x.shape[1])
         dx = torch.div(exp_matrix, sum_exp)
         minuses = torch.zeros_like(x)
         row_indices = torch.arange(x.size(0))
         minuses[range(0,N), y] = -1
         dx += minuses
         dx = torch.mul(dx, dout)
+        dx = torch.div(dx, N)
         # ========================
 
         return dx
