@@ -405,7 +405,9 @@ class Sequential(Layer):
         # TODO: Implement the forward pass by passing each layer's output
         #  as the input of the next.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        out = x
+        for layer in self.layers:
+            out = layer.forward(out, **kw)
         # ========================
 
         return out
@@ -417,7 +419,9 @@ class Sequential(Layer):
         #  Each layer's input gradient should be the previous layer's output
         #  gradient. Behold the backpropagation algorithm in action!
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        din = dout
+        for layer in reversed(self.layers):
+            din = layer.backward(din)
         # ========================
 
         return din
@@ -427,7 +431,7 @@ class Sequential(Layer):
 
         # TODO: Return the parameter tuples from all layers.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        return [tup for obj in self.layers for tup in obj.params()]
         # ========================
 
         return params
@@ -485,7 +489,11 @@ class MLP(Layer):
 
         # TODO: Build the MLP architecture as described.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        in_f = in_features
+        for index, feature in enumerate(hidden_features):
+            layers.append(Linear(in_features if index == 0 else hidden_features[index - 1], feature))
+            layers.append({"relu": ReLU, "sigmoid": Sigmoid}[activation]())
+        layers.append(Linear(hidden_features[-1], num_classes))
         # ========================
 
         self.sequence = Sequential(*layers)
