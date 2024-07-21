@@ -80,7 +80,26 @@ class CNN(nn.Module):
         #  Note: If N is not divisible by P, then N mod P additional
         #  CONV->ACTs should exist at the end, without a POOL after them.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        P = self.pool_every
+        N = len(self.channels)
+        pooling_method=POOLINGS[self.pooling_type]
+        activation_method=ACTIVATIONS[self.activation_type]
+        temp_in_channels= in_channels
+        index=0
+        for i in range(N//P):
+            for j in range(P):
+                layers.append(nn.Conv2d(temp_in_channels,out_channels=self.channels[index],**self.conv_params))
+                layers.append(activation_method(self.activation_params))
+                temp_in_channels=self.channels[index]
+                index+=1
+            layers.append(pooling_method(self.pooling_params))
+        for m in range(N%P):
+            layers.append(nn.Conv2d(temp_in_channels,out_channels=self.channels[index],**self.conv_params))
+            layers.append(activation_method(self.activation_params))
+            index+=1
+        
+
+
 
         # ========================
         seq = nn.Sequential(*layers)
@@ -95,7 +114,10 @@ class CNN(nn.Module):
         rng_state = torch.get_rng_state()
         try:
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            rand_data= torch.rand(self.in_size).unsqueeze(0)
+            out=self.feature_extractor(rand_data)
+            return nn.numel(out)
+            
             # ========================
         finally:
             torch.set_rng_state(rng_state)
@@ -109,7 +131,10 @@ class CNN(nn.Module):
         #  - The last Linear layer should have an output dim of out_classes.
         mlp: MLP = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        dims= self.hidden_dims+[self.out_classes]
+        nonlins=ACTIVATIONS[self.activation_type](**self.activation_params)
+        mlp=MLP(in_dim = self._n_features(), dims=dims, nonlins=nonlins)
+
         # ========================
         return mlp
 
@@ -119,7 +144,9 @@ class CNN(nn.Module):
         #  return class scores.
         out: Tensor = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        features=self.feature_extractor(x)
+        features_flattened = torch.flatten(features,1)
+        out = self.mlp(features_flattened)
         # ========================
         return out
 
