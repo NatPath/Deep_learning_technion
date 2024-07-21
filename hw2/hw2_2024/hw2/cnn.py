@@ -89,13 +89,14 @@ class CNN(nn.Module):
         for i in range(N//P):
             for j in range(P):
                 layers.append(nn.Conv2d(temp_in_channels,out_channels=self.channels[index],**self.conv_params))
-                layers.append(activation_method(self.activation_params))
+                layers.append(activation_method(**self.activation_params))
                 temp_in_channels=self.channels[index]
                 index+=1
-            layers.append(pooling_method(self.pooling_params))
+            layers.append(pooling_method(**self.pooling_params))
         for m in range(N%P):
             layers.append(nn.Conv2d(temp_in_channels,out_channels=self.channels[index],**self.conv_params))
-            layers.append(activation_method(self.activation_params))
+            layers.append(activation_method(**self.activation_params))
+            temp_in_channels=self.channels[index]
             index+=1
         
 
@@ -116,8 +117,7 @@ class CNN(nn.Module):
             # ====== YOUR CODE: ======
             rand_data= torch.rand(self.in_size).unsqueeze(0)
             out=self.feature_extractor(rand_data)
-            return nn.numel(out)
-            
+            return torch.numel(out)
             # ========================
         finally:
             torch.set_rng_state(rng_state)
@@ -132,7 +132,7 @@ class CNN(nn.Module):
         mlp: MLP = None
         # ====== YOUR CODE: ======
         dims= self.hidden_dims+[self.out_classes]
-        nonlins=ACTIVATIONS[self.activation_type](**self.activation_params)
+        nonlins=[ACTIVATIONS[self.activation_type](**self.activation_params)]*len(self.hidden_dims)+["none"]
         mlp=MLP(in_dim = self._n_features(), dims=dims, nonlins=nonlins)
 
         # ========================
