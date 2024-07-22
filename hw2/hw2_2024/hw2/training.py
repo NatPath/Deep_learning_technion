@@ -83,7 +83,13 @@ class Trainer(abc.ABC):
             #  - Use the train/test_epoch methods.
             #  - Save losses and accuracies in the lists above.
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            actual_num_epochs += 1
+            train_result = self.train_epoch(dl_train, **kw)
+            train_loss.append(sum(train_result.losses) / len(train_result.losses))
+            train_acc.append(train_result.accuracy)
+            test_result = self.test_epoch(dl_test, **kw)
+            test_loss.append(sum(test_result.losses) / len(test_result.losses))
+            test_acc.append(test_result.accuracy)
             # ========================
 
             # TODO:
@@ -94,11 +100,14 @@ class Trainer(abc.ABC):
             #    the checkpoints argument.
             if best_acc is None or test_result.accuracy > best_acc:
                 # ====== YOUR CODE: ======
-                raise NotImplementedError()
+                best_acc = test_result.accuracy
+                epochs_without_improvement = 0
                 # ========================
             else:
                 # ====== YOUR CODE: ======
-                raise NotImplementedError()
+                epochs_without_improvement += 1
+                if (early_stopping != None and early_stopping <= epochs_without_improvement):
+                    return FitResult(actual_num_epochs, train_loss, train_acc, test_loss, test_acc)
                 # ========================
 
         return FitResult(actual_num_epochs, train_loss, train_acc, test_loss, test_acc)
@@ -301,14 +310,18 @@ class LayerTrainer(Trainer):
         #  - Calculate number of correct predictions (make sure it's an int,
         #    not a tensor) as num_correct.
         # ====== YOUR CODE: ======
+        X = torch.flatten(X, 1)
         dout = self.model(X)
         self.optimizer.zero_grad()
-        self.model.backward(dout)
-        self.optimizer.step()
-        loss = self.loss_fn(X, y)
-        preds = torch.argmax(X, dim = 1)
+        y_matrix = torch.zeros_like(dout)
+        y_matrix[torch.arange(dout.size(0)), y] = 1
+        d_y = (1./y_matrix.size(0)) * (dout - y_matrix)
+        self.model.backward(d_y)
+        params = self.optimizer.step()
+        loss = self.loss_fn(dout, y)
+        preds = torch.argmax(dout, dim = 1)
         preds_correct = (preds == y)
-        num_correct = preds_correcs.sum().items()
+        num_correct = preds_correct.sum()
         # ========================
 
         return BatchResult(loss, num_correct)
@@ -318,7 +331,12 @@ class LayerTrainer(Trainer):
 
         # TODO: Evaluate the Layer model on one batch of data.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        X = torch.flatten(X, 1)
+        dout = self.model(X)
+        loss = self.loss_fn(dout, y)
+        preds = torch.argmax(dout, dim = 1)
+        preds_correct = (preds == y)
+        num_correct = preds_correct.sum()
         # ========================
 
         return BatchResult(loss, num_correct)

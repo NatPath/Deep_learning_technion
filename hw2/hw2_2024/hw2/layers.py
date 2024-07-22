@@ -364,13 +364,22 @@ class Dropout(Layer):
         super().__init__()
         assert 0.0 <= p < 1.0
         self.p = p
+        self.dx = torch.ones((0))
 
     def forward(self, x, **kw):
         # TODO: Implement the dropout forward pass.
         #  Notice that contrary to previous layers, this layer behaves
         #  differently a according to the current training_mode (train/test).
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        out = torch.clone(x)
+        self.dx = torch.ones_like(x)
+        if self.training_mode == False:
+            return torch.mul(out, 1-self.p)
+        for i in range(out.size(0)):
+            for j in range(out.size(1)):
+                if torch.rand(1) < self.p:
+                    out[i,j] = 0
+                    self.dx[i,j] = 0
         # ========================
 
         return out
@@ -378,7 +387,11 @@ class Dropout(Layer):
     def backward(self, dout):
         # TODO: Implement the dropout backward pass.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        if self.training_mode == False:
+            dx = dout
+        else:
+            assert self.dx.shape == dout.shape
+            dx = torch.mul(self.dx, dout) 
         # ========================
 
         return dx
@@ -489,10 +502,11 @@ class MLP(Layer):
 
         # TODO: Build the MLP architecture as described.
         # ====== YOUR CODE: ======
-        in_f = in_features
         for index, feature in enumerate(hidden_features):
             layers.append(Linear(in_features if index == 0 else hidden_features[index - 1], feature))
             layers.append({"relu": ReLU, "sigmoid": Sigmoid}[activation]())
+            if dropout > 0:
+                layers.append(Dropout(dropout))
         layers.append(Linear(hidden_features[-1], num_classes))
         # ========================
 
