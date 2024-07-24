@@ -240,16 +240,23 @@ The amount of TP in such senario is very small compared to the amount of FN and 
 """
 
 part3_q3 = r"""
-**Your answer:**
+1. If people with the disease will develop non-lethal symptoms that immediately confirm the diagnosis and can then be treated, it is better to pick a higher threshold in order to get less false positives at the cost of more false negatives. A person with a false negative result will develop non-lethal symptoms and be treated. The false negative will result in a later treatment but no significant or permanent harm to the person.
 
+2. In the second case it will be better to pick a slighty low threshold that will result in less false negatives at the cost of more false positives. A false positive would demand further testing which is expensive and risky for the patient, but a false negative has a high chance of costing the patient's life, making it a hight priority to reduce false negatives.
 
 """
 
 
 part3_q4 = r"""
-**Your answer:**
+There are several downsides to MLP in regard to the task.
 
+1. MLPs typically require a fixed size input, which can be a problem for variable-length sequences such as sentences.
 
+2. MLPs treat input features independently and with no regard for order. The order of words in a sentence is crucial for the meaning.
+
+3. MLPs have a limited receptive field because each layer only processes a fixed size input. For long sentences, the relationships between distant words are not captured effectively.
+
+4. To account for longer contexts, MLPs would require exponentially more neurons and layers, making the model large, slow to train, and prone to overfitting.
 """
 # ==============
 # Part 4 (CNN) answers
