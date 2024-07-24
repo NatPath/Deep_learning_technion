@@ -266,7 +266,28 @@ class ClassifierTrainer(Trainer):
         #  - Update parameters
         #  - Classify and calculate number of correct predictions
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        y_pred_scores=self.model.forward(X)
+        batch_loss=self.loss_fn(y_pred_scores,y)
+
+        #Three musketeers
+        self.optimizer.zero_grad()
+        batch_loss.backward()
+        self.optimizer.step()
+
+        y_pred=self.model.classify_scores(y_pred_scores)
+        preds_correct = (y_pred == y)
+        num_correct = preds_correct.sum()
+
+        # y_pred = torch.log(self.model.predict_proba(X))
+        # loss = self.loss_fn(y_pred, y)
+        # batch_loss = loss
+        # # batch_loss = loss.detach().numpy()
+        # prediction = self.model.classify(X)
+        # num_correct = torch.sum(prediction==y)
+
+        # self.optimizer.zero_grad()
+        # loss.backward()
+        # self.optimizer.step()
         # ========================
 
         return BatchResult(batch_loss, num_correct)
@@ -286,7 +307,12 @@ class ClassifierTrainer(Trainer):
             #  - Forward pass
             #  - Calculate number of correct predictions
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            y_pred= self.model.classify(X)
+            preds_correct = (y_pred == y)
+            num_correct = preds_correct.sum()
+
+            y_softmax = self.model.predict_proba(X)
+            batch_loss=self.loss_fn(y_softmax,y)
             # ========================
 
         return BatchResult(batch_loss, num_correct)
