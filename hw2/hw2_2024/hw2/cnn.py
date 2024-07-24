@@ -206,14 +206,40 @@ class ResidualBlock(nn.Module):
         #  - Don't create layers which you don't use! This will prevent
         #    correct comparison in the test.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        activation_method=ACTIVATIONS[activation_type]
+
+        # Prepare main_path
+        main_path=[]
+        L = len(channels)
+        temp_in_channels=in_channels
+        for i in range(L-1):
+            main_path.append(nn.Conv2d(temp_in_channels,out_channels=channels[i],kernel_size=kernel_sizes[i],padding = int(kernel_sizes[i]/2)))
+            if dropout!=0:
+                main_path.append(nn.Dropout2d(dropout))
+            if batchnorm:
+                main_path.append(nn.BatchNorm2d(channels[i]))
+            main_path.append(activation_method(**activation_params))
+
+            temp_in_channels=channels[i]
+        # last convolution
+        main_path.append(nn.Conv2d(temp_in_channels,out_channels=channels[-1],kernel_size=kernel_sizes[-1],padding = int(kernel_sizes[-1]/2)))
+
+        # Prepare shortcut_path
+        shortcut_path=[]
+        if channels[-1] != in_channels:
+            shortcut_path.append(nn.Conv2d(in_channels,out_channels=channels[-1],kernel_size=1,bias=False))
+
+        self.main_path= nn.Sequential(*main_path)
+        self.shortcut_path=nn.Sequential(*shortcut_path)
         # ========================
 
     def forward(self, x: Tensor):
         # TODO: Implement the forward pass. Save the main and residual path to `out`.
         out: Tensor = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        out=self.main_path(x)+self.shortcut_path(x)
+            
+
         # ========================
         out = torch.relu(out)
         return out
@@ -255,7 +281,10 @@ class ResidualBottleneckBlock(ResidualBlock):
         #  Initialize the base class in the right way to produce the bottleneck block
         #  architecture.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        all_channels=[inner_channels[0],*inner_channels,in_out_channels]
+        all_kernels=[1,*inner_kernel_sizes,1]
+        super().__init__(in_channels=in_out_channels,channels=all_channels,kernel_sizes=all_kernels,**kwargs)
+
         # ========================
 
 
