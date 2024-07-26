@@ -333,7 +333,28 @@ class ResNet(CNN):
         #    2 + len(inner_channels). [1 for each 1X1 proection convolution] + [# inner convolutions].
         # - Use batchnorm and dropout as requested.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        P= self.pool_every
+        N= len(self.channels)
+        temp_in_channels=in_channels
+        for i in range(N//P):
+            sub_channels=self.channels[i*P:(1+i)*P]
+            bottleneck_condition = self.bottleneck and temp_in_channels==sub_channels[-1]
+            if bottleneck_condition:
+                layers.append(ResidualBottleneckBlock(temp_in_channels,sub_channels[1:-1],[3]*(len(sub_channels[1:-1])),batchnorm=self.batchnorm,dropout=self.dropout,activation_type=self.activation_type,activation_params=self.activation_params))
+            else:
+                layers.append(ResidualBlock(temp_in_channels,sub_channels,[3]*P,batchnorm=self.batchnorm,dropout=self.dropout,activation_type=self.activation_type,activation_params=self.activation_params))
+            # layers.append(res_block(temp_in_channels,sub_channels,[3]*P,batchnorm=self.batchnorm,dropout=self.dropout,activation_type=self.activation_type,activation_params=self.activation_params))
+            layers.append(POOLINGS[self.pooling_type](**self.pooling_params))
+            temp_in_channels = sub_channels[-1]
+        
+        sub_channels=self.channels[(N//P-1)*P:(N//P-1)*P+N%P] 
+        if len(sub_channels)!=0:
+            bottleneck_condition = self.bottleneck and temp_in_channels==sub_channels[-1]
+            if bottleneck_condition:
+                layers.append(ResidualBottleneckBlock(temp_in_channels,sub_channels[1:-1],[3]*(len(sub_channels[1:-1])),batchnorm=self.batchnorm,dropout=self.dropout,activation_type=self.activation_type,activation_params=self.activation_params))
+            else:
+                layers.append(ResidualBlock(temp_in_channels,sub_channels,[3]*(N%P),batchnorm=self.batchnorm,dropout=self.dropout,activation_type=self.activation_type,activation_params=self.activation_params))
+
         # ========================
         seq = nn.Sequential(*layers)
         return seq
