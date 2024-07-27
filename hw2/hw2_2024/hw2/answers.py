@@ -361,15 +361,15 @@ An equation: $e^{i\pi} -1 = 0$
 
 
 part6_q1 = r"""
-**Your answer:**
+1. The model did a poor job detecting the objects in the images.
+In image 1, the model detected 3 objects, but mislabeled one with a high confidence (0.9), and mislabeled the other two with low confidence (0.47 and 0.37).
+In image 2, the model correctly labeled one object with confidence 0.5 and mislabeled two objects with confidences 0.39 and 0.65, while not detecting another object at all.
 
+2. There could be several reasons for the failure.
+One possible reason is lack of relevant data. If the training was done without enough images of dolphins, the model would have a harder time correctly identifying dolphins. This could be resolved by making sure there are enough images that contain each possible label.
+Another reason for mislabeling could be multiple objects in the same box. In image 2, a box containing a dog and a cat was labeled as "cat". To resolve this problem, we could change the model to use instance segmentation and identify every instance.
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+3. The idea behind an adversarial attack is to manipulate images in a small enough way as to not appear different to humans, but to fool an object detection model. The way to do that is to run an image through the model forward and backward to calculate both the loss and the gradient of the loss, and then to slightly change the image in the direction of the gradient, thereby enhancing the loss as much as possible for the least visual change.
 
 """
 
@@ -389,16 +389,9 @@ An equation: $e^{i\pi} -1 = 0$
 
 
 part6_q3 = r"""
-**Your answer:**
-
-
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
-
+Image 1 has bad illumination conditions. The light comes from directly behind the objects and so the model analyzes only shadows.
+Image 2 contains many occluded objects that are misidentified and sheep instead of cats.
+Image 3 is blurred due to high speed movement, and is misidentified as a bear instead of a monkey
 """
 
 part6_bonus = r"""
