@@ -85,10 +85,13 @@ class Trainer(abc.ABC):
             # ====== YOUR CODE: ======
             actual_num_epochs += 1
             train_result = self.train_epoch(dl_train, **kw)
-            train_loss.append(sum(train_result.losses) / len(train_result.losses))
+            train_losses = train_result.losses
+            train_loss.append((sum(train_losses) / len(train_losses)).item())
             train_acc.append(train_result.accuracy)
+
             test_result = self.test_epoch(dl_test, **kw)
-            test_loss.append(sum(test_result.losses) / len(test_result.losses))
+            test_losses = test_result.losses
+            test_loss.append((sum(test_losses) / len(test_losses)).item())
             test_acc.append(test_result.accuracy)
             # ========================
 
@@ -102,6 +105,8 @@ class Trainer(abc.ABC):
                 # ====== YOUR CODE: ======
                 best_acc = test_result.accuracy
                 epochs_without_improvement = 0
+                if checkpoints:
+                    self.save_checkpoint(checkpoints)
                 # ========================
             else:
                 # ====== YOUR CODE: ======
@@ -276,8 +281,7 @@ class ClassifierTrainer(Trainer):
 
         y_pred=self.model.classify_scores(y_pred_scores)
         preds_correct = (y_pred == y)
-        num_correct = preds_correct.sum()
-
+        num_correct = preds_correct.sum().item()
         # y_pred = torch.log(self.model.predict_proba(X))
         # loss = self.loss_fn(y_pred, y)
         # batch_loss = loss
@@ -309,7 +313,7 @@ class ClassifierTrainer(Trainer):
             # ====== YOUR CODE: ======
             y_pred= self.model.classify(X)
             preds_correct = (y_pred == y)
-            num_correct = preds_correct.sum()
+            num_correct = preds_correct.sum().item()
 
             y_softmax = self.model.predict_proba(X)
             batch_loss=self.loss_fn(y_softmax,y)
@@ -347,7 +351,7 @@ class LayerTrainer(Trainer):
         loss = self.loss_fn(dout, y)
         preds = torch.argmax(dout, dim = 1)
         preds_correct = (preds == y)
-        num_correct = preds_correct.sum()
+        num_correct = preds_correct.sum().item()
         # ========================
 
         return BatchResult(loss, num_correct)
@@ -362,7 +366,7 @@ class LayerTrainer(Trainer):
         loss = self.loss_fn(dout, y)
         preds = torch.argmax(dout, dim = 1)
         preds_correct = (preds == y)
-        num_correct = preds_correct.sum()
+        num_correct = preds_correct.sum().item()
         # ========================
 
         return BatchResult(loss, num_correct)
