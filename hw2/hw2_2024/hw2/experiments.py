@@ -107,7 +107,29 @@ def cnn_experiment(
     #   for you automatically.
     fit_res = None
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    x0,_=ds_train[0]
+    in_size = x0.shape
+    num_classes = 10
+    dl_train = torch.utils.data.DataLoader(ds_train,bs_train,shuffle = True)
+    dl_test = torch.utils.data.DataLoader(ds_test,bs_test, shuffle = False)
+    channels =[]
+    for  f in filters_per_layer:
+        channels+=[f]*layers_per_block
+    conv_params = dict(kernel_size=3, stride=1, padding=1)
+    model=ArgMaxClassifier(model_cls(in_size,num_classes,channels=channels,pool_every=pool_every,hidden_dims=hidden_dims,
+                    conv_params=conv_params,
+                    pooling_params=dict(kernel_size=2))).to(device)
+    optimizer=torch.optim.Adam(model.parameters(),lr=lr,weight_decay=reg)
+    loss_fn=torch.nn.CrossEntropyLoss().to(device)
+    trainer=ClassifierTrainer(model,loss_fn,optimizer,device)
+
+
+    best_acc=0
+    fit_res = trainer.fit(dl_train=dl_train,dl_test=dl_test,num_epochs=epochs,checkpoints=checkpoints,early_stopping=early_stopping)
+    best_acc = fit_res.test_acc[-1] if fit_res.test_acc[-1] > best_acc else best_acc
+     
+
+
     # ========================
 
     save_experiment(run_name, out_dir, cfg, fit_res)
