@@ -9,27 +9,26 @@ math (delimited with $$).
 # Part 1 (Backprop) answers
 
 part1_q1 = r"""
-**Your answer:**
+1.
+    A. The jacobian of Y w.r.t X will reflect how each element of X affects each element of Y, so the shape of the jacobian will be (64, 1024, 64, 512).
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+    B. Yes, the jacobian will be sparse. Since each element $X_(i,j) affects only row i of Y, each element of the jacobian, $J_(i,j,k,l), will have some value depending on W if i=k, or 0 otherwise. this means that $63/64$ of the elements will be zero.
+    
+    C. There is no need to materialize the jacobian. To calculate the downstream gratdient w.r.t. to the input, we can use the chain rule.
+    The forward pass is defined by  $Y = XW^T$, and the gradient of the output w.r.t. downstream scalar loss is $\delta\mat{Y}=\pderiv{L}{\mat{Y}}$. Out goal is to find $\delta\mat{X}=\pderiv{L}{\mat{X}}$. Using the chain rule, we know that $\delta\mat{X}=\delta\mat{Y}*\pderiv{\mat{Y}}{\mat{X}}$. Since $Y = XW^T$, The partial derivative of Y with respect to X is $W^T$. So: $\delta\mat{X}=\delta\mat{Y}*W^T$
+
+2.
+    A. The shape of the jacobian of Y w.r.t W will be (512, 1024, 64, 512).
+
+    B. Yes, the jacobian will be sparse. Since each element of Y is affected by only one row of W (one column of $W^T$), each element of the jacobian, $J_(i,j,k,l), will have some value depending on X if i=l, or 0 otherwise.
+
+    C. There is no need to materialize the jacobian. To calculate the downstream gratdient w.r.t. to the input, we can use the chain rule.
+    The forward pass is defined by  $Y = XW^T$, and the gradient of the output w.r.t. downstream scalar loss is $\delta\mat{Y}=\pderiv{L}{\mat{Y}}$. Out goal is to find $\delta\mat{W}=\pderiv{L}{\mat{W}}$. Using the chain rule, we know that $\delta\mat{W}=\delta\mat{Y}*\pderiv{\mat{Y}}{\mat{W}}$. Since $Y = XW^T$, The partial derivative of Y with respect to W is X. So: $\delta\mat{W}=\delta\mat{Y}*X$
 
 """
 
 part1_q2 = r"""
-**Your answer:**
-
-
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+While back-propagation is efficient and popular, it is not not required to train neural networks. Other options that don't use back-propagation include simulated annealing and evolutoinary algorithms.
 
 """
 
@@ -90,42 +89,34 @@ def part2_dropout_hp():
 
 
 part2_q1 = r"""
-**Your answer:**
+1. In the graph of no dropout, we can overfitting caused the testing accuracy to be significantly lower than the training accuracy. Training accuracy reaches over 40%, but testing accuracy is just over 15%.
+In the lower dropout value graph, the dropout managed to get rid of the overfitting, and the train and test results are closer to each other. Training accuracy is slightly lower than with no dropout, but training accuracy improves and reaches 20%.
+In the higher dropout value graph, The model is unable to learn effectively. Both training and testing accuracies stay below 20%.
 
+This fits our assumptions. Some level of dropout hinders the learning during training, and thus prevents overfitting, but too much overfitting (in our case, 80%) nullifies the activation of most neurons and effectively cancels almost all of the learning proccess.
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+2. As explained before, the lower dropout setting provides regularization and improves testing accuracy by 4% compared to no dropout. In contrast, the higher setting provides too much regularization and worsens both training and testing accuracies, compared to both no dropout and low dropout.
 
 """
 
 part2_q2 = r"""
-**Your answer:**
-
-
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+Yes, it is possible for the test loss to increase while the test accuracy also increases when training a model with the cross-entropy loss function.
+The accuracy represents the amount of correct predictions, while the loss represents the confidence of the predictions, so if the model predicts more correct answers, but with less confidence, the accuracy could increase while the loss also increases.
 
 """
 
 part2_q3 = r"""
-**Your answer:**
+1. Back-propagation computes the gradients necessary for the optimization process, while gradient descent uses these gradients to update the model's parameters.
 
+2. GD computes the gradient of the loss function with respect to the parameters by considering the entire dataset, while SGD considers only one datapoint or a batch, a subset of the dataset. This allows SGD to achieve different results depending on the division to subsets and the order of their usage.
+SGD is more efficient than GD since the computations require less memory. GD has a smoothes convergence than SGD, but SGD is able to escape local minima more effficiently.
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+3. Datasets used for deep learning tend to be very large, and GD requires storing the entire dataset in memory for each gradient computation, which can be either impossible or very expensive. SGD only uses a small part of the dataset for each iteration. SGD is also able to escape local minima due to its more erratic and random updates. Moreover, the noise introduced by SGD’s random sampling can act as a form of implicit regularization, helping to prevent overfitting and improving generalization.
 
+4.
+    A. Yes, this approach would produce a gradient equivalent to GD. Since calculations on the batches are independent from each other in the forward pass, it is possible to divide the forward pass into disjoint batches and acheive the same result as GD.
+
+    B. Despite using small batch sizes, with each forward pass the input of each linear layer is saved to memory, to be used in calculating the backward pass. This means that effectively the entire data is saved regardless of division to small batches.
 """
 
 part2_q4 = r"""
