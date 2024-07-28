@@ -122,12 +122,59 @@ SGD is more efficient than GD since the computations require less memory. GD has
 
 part2_q4 = r"""
 1.
-    1.
-        In the forward mode AD approach:
-        We mark $F_{j}(a)=f_{j}\circ\cdots\circ f_{2}\circ f_{1}(a)$ and calculate 
-    2.
+   define
+        $F_{j}(a)=f_{j}\circ\cdots\circ f_{2}\circ f_{1}(a)$
+
+Forward model:
+
+We look at the expression of the derivative:
+
+\partial_{x}f(x)=\frac{\partial F_{n}(x)}{\partial x}=\frac{\partial f_{n}(F_{n-1}(x))}{\partial x}=\frac{\partial f_{n}}{\partial x}|_{F_{n-1}(x)}\cdot\frac{\partial F_{n-1}(x)}{\partial x}=
+
+=f'_{n}(F_{n-1}(x))\cdot f'_{n-1}(F_{n-2}(x))\cdot..\cdot f'_{1}(x)
+
+From this expression we can see it can be calculated as follows:
+
+''' psueodo code:
+
+{
+
+initialize
+
+F=x, res =1
+
+for i\in\{1,2,3,...n\}:
+
+{ res=res\cdot f_{i}'(F)
+
+F=f_{i}(F)
+
+}
+
+return res 
+
+}
+'''
+
+In this code the calculation of the result is not using F_{i} saved on the nodes, but keeps only the one value and upon using it over-run it with the F_{i+1} value to be used in the next iteration.
+
+This way we calculate the derivative in O(n) in time and O(1) additional memory.
+
+For the reverse AD:
+
+We couldn't find a way to reduce the complexity from O(n), any improvement we could think of would still leave it O(n).
+
+We've heard of a solution involving checkpoints and read about it online, but we don't understand how it could help when calculating a single input out chain rule.
+
 2.
+In recitation 5 we've seen that for the forward AD, generalizing to arbitrary computational graph is done by each node storing the gradient w.r.t to all the input nodes.
+Here we assumed that the gradients w.r.t to the input are given for each f_i. but for an arbitrary graph this assumption seems to be a bit more optimstic, so I would say the genralization is not trivial, unless of course the derivatives are given and in that case it enables us to perform the same method described earlier but for each path from input to output. 
+As for the backward AD, we didn't find an improvement for the chain of 1 input 1 output case, but the checkpoint methods seem to make more sense here, reducing overhead of memory which is resulted from not haveing to save the gradients on all of the nodes, but only on the path which is required for the calculation of the output. The path is changing in a recursive way allowing some gradients to be forgotten on the way when there is "branching out" to multiple outputs on some node (we still don't understand this method fully to be honest, but this is what we got).
+
 3.
+Deep neural networks require large amount of memoery, memoery which is often GPU memory (many parameters of the model) which is costly and often limits our capability to increase the depth and to achieve generalization through the increased expressibility it allows.
+ResNet and VGGs for example are known to be able to be deep (by avoiding vanishing gradients) and thus would benefit from memory freed by methods such as the one described above. For example, the freed memeory can be used to allow larger batch sizes and also having more layers) 
+
 
 """
 
