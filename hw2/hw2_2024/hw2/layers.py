@@ -390,6 +390,7 @@ class Dropout(Layer):
         # ====== YOUR CODE: ======
         if self.training_mode == False:
             dx = torch.clone(dout)
+            dx = torch.mul(dx, 1-self.p)
         else:
             assert self.dx.shape == dout.shape
             dx = torch.mul(self.dx, dout) 
