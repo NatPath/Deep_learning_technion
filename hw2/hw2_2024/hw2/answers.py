@@ -412,16 +412,9 @@ Another reason for mislabeling could be multiple objects in the same box. In ima
 
 
 part6_q2 = r"""
-**Your answer:**
-
-
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
-
+Image 1 has bad illumination conditions. The light comes from directly behind the objects and so the model analyzes only shadows.
+Image 2 contains many occluded objects that are misidentified and sheep instead of cats.
+Image 3 is blurred due to high speed movement, and is misidentified as a bear instead of a monkey
 """
 
 
