@@ -374,12 +374,13 @@ class Dropout(Layer):
         out = torch.clone(x)
         self.dx = torch.ones_like(x)
         if self.training_mode == False:
-            return torch.mul(out, 1-self.p)
-        for i in range(out.size(0)):
-            for j in range(out.size(1)):
-                if torch.rand(1) < self.p:
-                    out[i,j] = 0
-                    self.dx[i,j] = 0
+            out = torch.mul(out, (1-self.p))
+        else:
+            for i in range(out.size(0)):
+                for j in range(out.size(1)):
+                    if torch.rand(1) < self.p:
+                        out[i,j] = 0
+                        self.dx[i,j] = 0
         # ========================
 
         return out
@@ -388,7 +389,7 @@ class Dropout(Layer):
         # TODO: Implement the dropout backward pass.
         # ====== YOUR CODE: ======
         if self.training_mode == False:
-            dx = dout
+            dx = torch.clone(dout)
         else:
             assert self.dx.shape == dout.shape
             dx = torch.mul(self.dx, dout) 
