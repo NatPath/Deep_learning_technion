@@ -121,15 +121,13 @@ SGD is more efficient than GD since the computations require less memory. GD has
 """
 
 part2_q4 = r"""
-**Your answer:**
-
-
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+1.
+    1.
+        In the forward mode AD approach:
+        We mark $F_{j}(a)=f_{j}\circ\cdots\circ f_{2}\circ f_{1}(a)$ and calculate 
+    2.
+2.
+3.
 
 """
 
@@ -175,7 +173,6 @@ def part3_optim_hp():
 
 
 part3_q1 = r"""
-**Your answer:**
 \\
 1.\\
 Optimization Error is the loss difference between the returned hypothesis learned by the trained model (marked by $\bar{h}$) 
@@ -210,7 +207,6 @@ To avoid this problem we should understand the problem and the data better and d
 """
 
 part3_q2 = r"""
-**Your answer:**
 Case we expect false positive rate (FPR) to be high:
 \\
 Consider a case of an airport security automatic checker which is an initial checker for bags.
@@ -275,7 +271,6 @@ def part4_optim_hp():
 
 
 part4_q1 = r"""
-**Your answer:**
 1.
 
 Convs directly on the 256-channel input example:
@@ -338,7 +333,6 @@ Reagarding "combining" the input spatially, the receptive field of a bottlenecke
 
 
 part5_q1 = r"""
-**Your answer:**
 1.
 
 The depth which resulted with the best test accuracy was L=4 and K=64. We think it is just a sweet spot between being to large of a network (which tend to overtrain due to large number of parameters or in our case, not be able to learn at all due to exploading/vanishing gradients)
@@ -355,7 +349,6 @@ It might be resovled using a skip connection network architecture such as resnet
 """
 
 part5_q2 = r"""
-**Your answer:**
 The best test_acc is acchieved L4_K64, around 72% accuracy. Consistent with the previous experiment which was also the case.
 
 For L=2 there seems to be some sort of learning, whcih is best with K=32 and gets worse as K gets larger, we can only make an educated guess that when the network is shallow it benefits smaller more concised data expressed with fewer features(which's number is set by the number of kernels for the convolutions).
@@ -365,29 +358,23 @@ For L=8 we see a non learning network, probably for the same reasons mentioned i
 """
 
 part5_q3 = r"""
-**Your answer:**
+The best test accuracy is achived with L2_K64-128. A 4 layer network just as in the previous best runs from 1.1 and 1.2, but this time with increasing number of kernels as it gets deeper.
 
+For L=3 we get slightly less accurate , but in a similar trend.
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
-
+For L=4, which is an 8 layer network, we get again the behaivour of too deep of a network obseved in 1.1 and 1.2.
 """
 
 part5_q4 = r"""
-**Your answer:**
+The best test accuracy is achieved with L4_K_64-128-256 with alittle over 80% accuracy. Slightly better than the same K's but with L=2 variation (which learns faster but stops due to early stopping when showing signs of overtrainning).
 
+We can see that there is some decent learning for all configurations, even the very deep ones (which required to increases the P aka the pool_every hyperparameter from 3 to 10 in the 2 deepest layered configurations L32_K32 and L8_K64-128-256).
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+We see that there is benefit in increasing the number of features as we get deeper into the network. while keeping K=32 constant provided decent results which are better than those achived in the previous experiments, rising to around 75% in L16_K32 and L32_K32  compared to around 72% in the bests of the previous.
 
+These results lead us to believe that ResNets are better for this task, allowing the network to be deeper, and increasing the number of kernels, without reaching overfitting and avoiding vanishing gradients.
+
+Note that the configurations in which we learned with P=10 instead of P=3 mentioned earlier, we haven't got the chance to tune the parameters that all of the tests will be with the same params, as the runs take much time and we already got fine results in the previous runs that we didn't think we should overlook (We didin't want to compromise on low quality results only to be on the same ground regarding the P parameter which we tuned to be larger because for P=3 the features gets zero sized).
 """
 
 
