@@ -284,14 +284,58 @@ def part4_optim_hp():
 
 part4_q1 = r"""
 **Your answer:**
+1.
 
+Convs directly on the 256-channel input example:
+Each convolution layer has 3x3x(\#input_channels=256)+1 parameters per filter (+1 because of the bias term), and 256 filters as the number of input channels for the next layer.
+Thus in this example with 256 input_channels to each layer and 2 covnvolution layers overall there are:
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+(3x3x256+1)x256x2 = \\
+1,180,160 parameters total
+Bottleneck example:
+first layer: (1x1x256+1)x64 parameters\\
+second layer: (3x3x64+1)x64\\
+third layer: (1x1x64+1)x256\\
+total:70,016 parameters total
+
+We can see that the bottleneck approach requires much less parameters, an order of magnitude less, and thus less prone to overfitting.
+
+\\
+
+\\
+2.
+
+A convolution with a dxd filter on an input of dimensions CxHxW, when the stride and padding are chosen so that the HxW dimensions of the result don't change
+, is performing
+(d^2*H*W*C*2+1) operations, the x2 factor at the end due to the multipication + summation. and +1 is due to the bias addition.
+Relu is pointwise thus adds CxHxW, so does the summation operator between the skip and the main pain.
+
+Convs directly on the 256-channel input example:
+\\
+Thus
+(3x3x256x2xHxW+1)x256x2 + 256xHxWx3 =(neglecting terms without HxW as they are very small )
+2,360,064xHxW operations total.
+\\
+
+Bottleneck example:
+
+1x1x256x2xHxWx64 + 64xHxW + 3x3x64x2xHxWx64 + 64xHxW + 1x1x64x2xHxWx256 + 256xHxWx2 =
+
+139,904xHxW operations total
+
+  
+
+The bottleneck approach requires an order of magninitude less operations thus much more computational efficient (assuming both approches are performing similarly)
+
+\\
+
+3.
+
+Both approaches combine all of the feature-maps in each layer, thus are similar in their ability to combine across feature maps.
+
+Reagarding "combining" the input spatially, the receptive field of a bottlenecked block is smaller, due to more 3x3 convolutions- its receptive field is going to be larger by a factor of 2 than the regular block.
+
+  
 
 """
 
@@ -303,27 +347,28 @@ An equation: $e^{i\pi} -1 = 0$
 
 part5_q1 = r"""
 **Your answer:**
+1.
 
+The depth which resulted with the best test accuracy was L=4 and K=64. We think it is just a sweet spot between being to large of a network (which tend to overtrain due to large number of parameters or in our case, not be able to learn at all due to exploading/vanishing gradients)
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+and being too small (too few parameters, the expressivness of the model suffers and thus it is harder to learn).
 
+Note that the L=4 network is slightly better than the L2 in terms of loss and accuracy when K=32. but the L4 network also shows signs of overfitting in the last iterations (test loss rises while train loss still drops) and thus is stopped earlier than the L=2 network training. In the K=64 the difference in perforemance is more significant between L=2 and L=4.
+
+Maybe because larger K means more filters, and thus carry more information which is beneficial when the network is deeper and has more power to extract useful information from it.
+
+2. for L in {8,16} the network wasn't trainable. We suspect it might be due to vanishing/exploding gradients due to the depth of the network.
+
+It might be resovled using a skip connection network architecture such as resnet or using regularizatio techniques such as batch-normalisation (for exploding and vanishing) and gradient clipping (for exploding). Also, due to shortage in time we have not tuned the optimizer hyperparams for long enough, which might have resulted with trainablity for these L's.
 """
 
 part5_q2 = r"""
 **Your answer:**
+The best test_acc is acchieved L4_K64, around 72% accuracy. Consistent with the previous experiment which was also the case.
 
+For L=2 there seems to be some sort of learning, whcih is best with K=32 and gets worse as K gets larger, we can only make an educated guess that when the network is shallow it benefits smaller more concised data expressed with fewer features(which's number is set by the number of kernels for the convolutions).
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+For L=8 we see a non learning network, probably for the same reasons mentioned in q1.
 
 """
 

@@ -311,12 +311,20 @@ class ClassifierTrainer(Trainer):
             #  - Forward pass
             #  - Calculate number of correct predictions
             # ====== YOUR CODE: ======
+            y_pred_scores=self.model.forward(X)
+            batch_loss=self.loss_fn(y_pred_scores,y)
+
+            y_pred=self.model.classify_scores(y_pred_scores)
+            preds_correct = (y_pred == y)
+            num_correct = preds_correct.sum().item()
+            '''
             y_pred= self.model.classify(X)
             preds_correct = (y_pred == y)
             num_correct = preds_correct.sum().item()
 
             y_softmax = self.model.predict_proba(X)
             batch_loss=self.loss_fn(y_softmax,y)
+            '''
             # ========================
 
         return BatchResult(batch_loss, num_correct)
