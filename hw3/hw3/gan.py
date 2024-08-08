@@ -7,6 +7,9 @@ from torch.utils.data import DataLoader
 from torch.optim.optimizer import Optimizer
 import numpy as np
 
+from .autoencoder import EncoderCNN
+from .autoencoder import DecoderCNN
+
 class Discriminator(nn.Module):
     def __init__(self, in_size):
         """
@@ -20,7 +23,11 @@ class Discriminator(nn.Module):
         #  You can then use either an affine layer or another conv layer to
         #  flatten the features.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        in_channels = in_size[0]
+        self.cnn = EncoderCNN(in_channels,256)
+        num_features= self._calc_num_cnn_features(in_size)
+        self.fc = nn.Linear(num_features,1,bias=True)
+
         # ========================
 
     def _calc_num_cnn_features(self, in_shape):
@@ -39,7 +46,9 @@ class Discriminator(nn.Module):
         #  No need to apply sigmoid to obtain probability - we'll combine it
         #  with the loss due to improved numerical stability.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        features = (self.cnn(x)).view(x.shape[0],-1)
+        y=self.fc(features)
+
         # ========================
         return y
 
@@ -61,7 +70,8 @@ class Generator(nn.Module):
         #  section or implement something new.
         #  You can assume a fixed image size.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        self.h = 4
+        self.w = 4
         # ========================
 
     def sample(self, n, with_grad=False):
