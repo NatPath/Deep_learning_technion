@@ -3,6 +3,19 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+ACTIVATIONS = {
+    "relu": nn.ReLU,
+    "tanh": nn.Tanh,
+    "sigmoid": nn.Sigmoid,
+    "softmax": nn.Softmax,
+    "logsoftmax": nn.LogSoftmax,
+    "lrelu": nn.LeakyReLU,
+    "none": nn.Identity,
+    None: nn.Identity,
+}
+
+POOLINGS = {"avg": nn.AvgPool2d, "max": nn.MaxPool2d}
+
 class EncoderCNN(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
@@ -19,7 +32,25 @@ class EncoderCNN(nn.Module):
         #  use pooling or only strides, use any activation functions,
         #  use BN or Dropout, etc.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        conv_params = dict(kernel_size=4,stride=2,padding=1,bias=False)
+        activation_type='lrelu'
+        activation_params=dict(negative_slope=0.2 , inplace=True)
+        '''
+        pooling_type='max'
+        pooling_params=dict(kernel_size=2)
+        pooling_method= POOLINGS[pooling_type]
+        '''
+        channels_list = [64, 128, 256]
+        modules.append(nn.Conv2d(in_channels=in_channels,out_channels = channels_list[0],**conv_params))
+        modules.append(ACTIVATIONS[activation_type](**activation_params))
+        prev_channels=channels_list[0]
+        for channels in channels_list:
+            modules.append(nn.Conv2d(in_channels=prev_channels,out_channels = channels,**conv_params))
+            modules.append(nn.BatchNorm2d(channels))
+            modules.append(ACTIVATIONS[activation_type](**activation_params))
+            prev_channels=channels
+        #modules.append(nn.Conv2d(prev_channels, out_channels, kernel_size=4, stride=1, padding=0, bias=False))
+        #modules.append(nn.Sigmoid())
         # ========================
         self.cnn = nn.Sequential(*modules)
 
@@ -42,7 +73,27 @@ class DecoderCNN(nn.Module):
         #  output should be a batch of images, with same dimensions as the
         #  inputs to the Encoder were.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        conv_params = dict(kernel_size=4,stride=2,padding=1,bias=False)
+        activation_type='relu'
+        activation_params=dict(inplace=True)
+        '''
+        pooling_type='max'
+        pooling_params=dict(kernel_size=2)
+        pooling_method= POOLINGS[pooling_type]
+        '''
+        channels_list = [ 256, 128, 64]
+        modules.append(nn.ConvTranspose2d(in_channels=in_channels,out_channels = channels_list[0],kernel_size=4,stride=1,padding=0,bias=False))
+        modules.append(nn.BatchNorm2d(channels_list[0]))
+        modules.append(ACTIVATIONS[activation_type](**activation_params))
+
+        prev_channels=channels_list[0]
+        for channels in channels_list:
+            modules.append(nn.ConvTranspose2d(in_channels=prev_channels,out_channels = channels,**conv_params))
+            modules.append(nn.BatchNorm2d(channels))
+            modules.append(ACTIVATIONS[activation_type](**activation_params))
+            prev_channels=channels
+        modules.append(nn.ConvTranspose2d(prev_channels, out_channels, kernel_size=4, stride=1, padding=0, bias=False))
+        modules.append(nn.Tanh())
         # ========================
         self.cnn = nn.Sequential(*modules)
 
