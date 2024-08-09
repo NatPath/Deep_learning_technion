@@ -109,7 +109,7 @@ def chars_to_labelled_samples(text: str, char_to_idx: dict, seq_len: int, device
     :param char_to_idx: The mapping to create and embedding with.
     :param seq_len: The sequence length of each sample and label.
     :param device: The device on which to create the result tensors.
-    :return: A tuple containing two tensors:
+    :return: A tuple contaning two tensors:
     samples, of shape (N, S, V) and labels of shape (N, S) where N is
     the number of created samples, S is the seq_len and V is the embedding
     dimension.
@@ -127,7 +127,9 @@ def chars_to_labelled_samples(text: str, char_to_idx: dict, seq_len: int, device
     samples = onehot_text.view(N, seq_len, len(char_to_idx))
     
     labels_string = text[1:(N * seq_len) + 1 - len(text)]
-    labels = [list(labels_string[i * seq_len: (i + 1) * seq_len]) for i in range(N)]
+    labels_idx_list = [char_to_idx[ch] for ch in labels_string]
+    labels_idx = torch.tensor(labels_idx_list)
+    labels = labels_idx.reshape([N, seq_len])
     # ========================
     return samples, labels
 
@@ -212,7 +214,10 @@ class SequenceBatchSampler(torch.utils.data.Sampler):
         #  you can drop it.
         idx = None  # idx should be a 1-d list of indices.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        step = len(self.dataset) // self.batch_size
+        idx = []
+        for offset in range(step):
+            idx.extend([i * step + offset for i in range(self.batch_size)])
         # ========================
         return iter(idx)
 
@@ -229,8 +234,8 @@ class MultilayerGRU(nn.Module):
         """
         :param in_dim: Number of input dimensions (at each timestep).
         :param h_dim: Number of hidden state dimensions.
-        :param out_dim: Number of input dimensions (at each timestep).
-        :param n_layers: Number of layer in the model.
+        :param out_dim: Number of output dimensions (at each timestep).
+        :param n_layers: Number of layers in the model.
         :param dropout: Level of dropout to apply between layers. Zero
         disables.
         """
@@ -246,7 +251,20 @@ class MultilayerGRU(nn.Module):
         # TODO: READ THIS SECTION!!
 
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        # z_t: (B,H)
+        # h_t: (B,H)
+        # g_t: (B,H)
+        # layer_params: List of dictionaries
+        # Layer 1: wxz(V,H), whz(H,H), same for wx/hr and wx/hg
+        # other layers: wxz(H,H), whz(H,H)
+        self.why = nn.Linear(h_dim, out_dim)
+        self.layer_params = []
+        self.layer_params.append({'wxz': nn.Linear(in_dim, h_dim), 'whz': nn.Linear(h_dim, h_dim), 'wxr': nn.Linear(in_dim, h_dim), 'whr': nn.Linear(h_dim, h_dim), 'wxg': nn.Linear(in_dim, h_dim), 'whg': nn.Linear(h_dim, h_dim)})
+        
+        for layer in range(1, n_layers):
+            self.layer_params.append({'wxz': nn.Linear(h_dim, h_dim), 'whz': nn.Linear(h_dim, h_dim), 'wxr': nn.Linear(h_dim, h_dim), 'whr': nn.Linear(h_dim, h_dim), 'wxg': nn.Linear(h_dim, h_dim), 'whg': nn.Linear(h_dim, h_dim)})
+
+        self.dropout = nn.Dropout(dropout, inplace = False)
         # ========================
 
     def forward(self, input: Tensor, hidden_state: Tensor = None):
