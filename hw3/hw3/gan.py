@@ -24,7 +24,8 @@ class Discriminator(nn.Module):
         #  flatten the features.
         # ====== YOUR CODE: ======
         in_channels = in_size[0]
-        self.cnn = EncoderCNN(in_channels,256)
+        out_channels = 1024
+        self.cnn = EncoderCNN(in_channels,out_channels)
         num_features= self._calc_num_cnn_features(in_size)
         self.fc = nn.Linear(num_features,1,bias=True)
 
@@ -70,8 +71,12 @@ class Generator(nn.Module):
         #  section or implement something new.
         #  You can assume a fixed image size.
         # ====== YOUR CODE: ======
-        self.h = 4
-        self.w = 4
+        self.featuremap_size=featuremap_size
+        self.features_num= 1024
+        self.fc = nn.Linear(z_dim,self.features_num*featuremap_size*featuremap_size, bias=False)
+        self.decoder=DecoderCNN(self.features_num,out_channels)
+
+
         # ========================
 
     def sample(self, n, with_grad=False):
@@ -88,7 +93,13 @@ class Generator(nn.Module):
         #  Generate n latent space samples and return their reconstructions.
         #  Don't use a loop.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        random_latent_space_samples = torch.randn(size=(n,self.z_dim),device=device)
+        if with_grad:
+            samples = self.forward(random_latent_space_samples)
+        else:
+            with torch.no_grad():
+                samples = self.forward(random_latent_space_samples)
+        
         # ========================
         return samples
 
@@ -102,7 +113,10 @@ class Generator(nn.Module):
         #  Don't forget to make sure the output instances have the same
         #  dynamic range as the original (real) images.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        features = self.fc(z)
+        decoder_input_shape = [z.shape[0],self.features_num,self.featuremap_size,self.featuremap_size]
+        features = torch.reshape(features,decoder_input_shape)
+        x=self.decoder.forward(features)
         # ========================
         return x
 
@@ -128,7 +142,15 @@ def discriminator_loss_fn(y_data, y_generated, data_label=0, label_noise=0.0):
     #  generated labels.
     #  See pytorch's BCEWithLogitsLoss for a numerically stable implementation.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    data_noise = (torch.rand(y_data.shape,device=y_data.device)-0.5)*label_noise
+    generated_noise = (torch.rand(y_generated.shape,device=y_data.device)-0.5)*label_noise
+    data_label_noised = data_label + data_noise
+    generated_label_noised = (1-data_label) +generated_noise
+
+    loss = torch.nn.BCEWithLogitsLoss()
+    loss_data = loss(y_data,data_label_noised)
+    loss_generated = loss(y_generated,generated_label_noised)
+
     # ========================
     return loss_data + loss_generated
 

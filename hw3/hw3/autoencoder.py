@@ -40,11 +40,11 @@ class EncoderCNN(nn.Module):
         pooling_params=dict(kernel_size=2)
         pooling_method= POOLINGS[pooling_type]
         '''
-        channels_list = [64, 128, 256]
+        channels_list = [128, 256, 512, out_channels]
         modules.append(nn.Conv2d(in_channels=in_channels,out_channels = channels_list[0],**conv_params))
         modules.append(ACTIVATIONS[activation_type](**activation_params))
         prev_channels=channels_list[0]
-        for channels in channels_list:
+        for channels in channels_list[1:]:
             modules.append(nn.Conv2d(in_channels=prev_channels,out_channels = channels,**conv_params))
             modules.append(nn.BatchNorm2d(channels))
             modules.append(ACTIVATIONS[activation_type](**activation_params))
@@ -81,19 +81,20 @@ class DecoderCNN(nn.Module):
         pooling_params=dict(kernel_size=2)
         pooling_method= POOLINGS[pooling_type]
         '''
-        channels_list = [ 256, 128, 64]
-        modules.append(nn.ConvTranspose2d(in_channels=in_channels,out_channels = channels_list[0],kernel_size=4,stride=1,padding=0,bias=False))
+        channels_list = [ 512 ,256, 128]
+        #modules.append(nn.ConvTranspose2d(in_channels=in_channels,out_channels = channels_list[0],kernel_size=4,stride=1,padding=0,bias=False))
+        modules.append(nn.ConvTranspose2d(in_channels=in_channels,out_channels = channels_list[0],**conv_params))
         modules.append(nn.BatchNorm2d(channels_list[0]))
         modules.append(ACTIVATIONS[activation_type](**activation_params))
 
         prev_channels=channels_list[0]
-        for channels in channels_list:
+        for channels in channels_list[1:]:
             modules.append(nn.ConvTranspose2d(in_channels=prev_channels,out_channels = channels,**conv_params))
             modules.append(nn.BatchNorm2d(channels))
             modules.append(ACTIVATIONS[activation_type](**activation_params))
             prev_channels=channels
-        modules.append(nn.ConvTranspose2d(prev_channels, out_channels, kernel_size=4, stride=1, padding=0, bias=False))
-        modules.append(nn.Tanh())
+        modules.append(nn.ConvTranspose2d(prev_channels, out_channels, **conv_params))
+        #modules.append(nn.Tanh())
         # ========================
         self.cnn = nn.Sequential(*modules)
 
