@@ -112,6 +112,25 @@ part2_q4 = r"""
 # ==============
 # Part 3 answers
 
+def part3_gan_hyperparams():
+    lr = 0.0002
+    betas = (0.5 , 0.999)
+    dsc_optim_params= { 'type' : "Adam" , 'lr' : lr, 'betas': betas }
+    gen_optim_params= { 'type' : "Adam" , 'lr' : lr, 'betas': betas }
+    hypers= dict(
+        batch_size = 128,
+        z_dim = 100,
+        discriminator_optimizer = dsc_optim_params ,
+        generator_optimizer =  gen_optim_params ,
+        data_label = 1,
+        label_noise = 0.01
+
+    )
+    # Tweak them
+
+    return hypers 
+
+
 PART3_CUSTOM_DATA_URL = None
 
 

@@ -147,9 +147,9 @@ def discriminator_loss_fn(y_data, y_generated, data_label=0, label_noise=0.0):
     data_label_noised = data_label + data_noise
     generated_label_noised = (1-data_label) +generated_noise
 
-    loss = torch.nn.BCEWithLogitsLoss()
-    loss_data = loss(y_data,data_label_noised)
-    loss_generated = loss(y_generated,generated_label_noised)
+    loss_func = torch.nn.BCEWithLogitsLoss()
+    loss_data = loss_func(y_data,data_label_noised)
+    loss_generated = loss_func(y_generated,generated_label_noised)
 
     # ========================
     return loss_data + loss_generated
@@ -171,7 +171,9 @@ def generator_loss_fn(y_generated, data_label=0):
     #  Think about what you need to compare the input to, in order to
     #  formulate the loss in terms of Binary Cross Entropy.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    loss_func = torch.nn.BCEWithLogitsLoss()
+    data_label_tensor = torch.zeros(y_generated.shape,device=y_generated.device)+data_label
+    loss = loss_func(y_generated,data_label_tensor) 
     # ========================
     return loss
 
@@ -196,7 +198,16 @@ def train_batch(
     #  2. Calculate discriminator loss
     #  3. Update discriminator parameters
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    dsc_optimizer.zero_grad()
+
+    batch_size = x_data.shape[0]
+    x_gen = gen_model.sample(batch_size,with_grad=False)
+    y_gen = dsc_model(x_gen)
+    y_data = dsc_model(x_data)
+    dsc_loss = dsc_loss_fn(y_data,y_gen)
+
+    dsc_loss.backward()
+    dsc_optimizer.step()
     # ========================
 
     # TODO: Generator update
@@ -204,7 +215,14 @@ def train_batch(
     #  2. Calculate generator loss
     #  3. Update generator parameters
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    gen_optimizer.zero_grad()
+
+    x_gen = gen_model.sample(batch_size,with_grad=True)
+    y_gen = dsc_model(x_gen)
+    gen_loss = gen_loss_fn(y_gen)
+
+    gen_loss.backward()
+    gen_optimizer.step()
     # ========================
 
     return dsc_loss.item(), gen_loss.item()
@@ -227,7 +245,6 @@ def save_checkpoint(gen_model, dsc_losses, gen_losses, checkpoint_file):
     #  You should decide what logic to use for deciding when to save.
     #  If you save, set saved to True.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
     # ========================
     torch.save(gen_model, checkpoint_file)
     print(f"*** Saved checkpoint {checkpoint_file} ")
