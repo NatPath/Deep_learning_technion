@@ -83,13 +83,16 @@ def part2_vae_hyperparams():
 
 
 part2_q1 = r"""
-**Your answer:**
+
+When we train the GAN we train in turns the discriminator and the genrator, each has its own objective.
+Upon training the discriminator the weights of the discriminators are updated using gradient descent toward a minimization of the binary cross entropy loss trying to adjust the classifier to assign the real data samples a label of 1 and to the fake samples label of 0 - 
+it thus needs to update the weights of the discriminator only, the calculation of the gradients to update these weights do not depend on the calculation path of the generator and thus unneeded and we should turn off the gradients of the generator in this turn (note that the weights of the generator are not to be updated in this turn).
+Upon training the generator, the objective is to update its weights toward minimization of BCEloss trying to "cheat" the discriminator, and label fake data as true, thus the gradients of the generator should be turned on. In this turn the gradients of the discriminator should also be turned on as the calculation for the gradients of the discriminator depends on the calculation path in the discriminator by backpropagation.
 
 
 """
 
 part2_q2 = r"""
-**Your answer:**
 
 
 """
@@ -131,7 +134,9 @@ def part3_gan_hyperparams():
     return hypers 
 
 
+#PART3_CUSTOM_DATA_URL = "/home/nativ/Deep_learning_technion/hw3/spongebob_images"
 PART3_CUSTOM_DATA_URL = None
+
 
 
 def part3_transformer_encoder_hyperparams():
