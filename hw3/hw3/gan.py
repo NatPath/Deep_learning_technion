@@ -198,18 +198,16 @@ def train_batch(
     #  2. Calculate discriminator loss
     #  3. Update discriminator parameters
     # ====== YOUR CODE: ======
-    k=5
-    for i in range(k):
-        dsc_optimizer.zero_grad()
+    dsc_optimizer.zero_grad()
 
-        batch_size = x_data.shape[0]
-        x_gen = gen_model.sample(batch_size,with_grad=False)
-        y_gen = dsc_model(x_gen)
-        y_data = dsc_model(x_data)
-        dsc_loss = dsc_loss_fn(y_data,y_gen)
+    batch_size = x_data.shape[0]
+    x_gen = gen_model.sample(batch_size,with_grad=False)
+    y_gen = dsc_model(x_gen)
+    y_data = dsc_model(x_data)
+    dsc_loss = dsc_loss_fn(y_data,y_gen)
 
-        dsc_loss.backward()
-        dsc_optimizer.step()
+    dsc_loss.backward()
+    dsc_optimizer.step()
     # ========================
 
     # TODO: Generator update
