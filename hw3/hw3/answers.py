@@ -85,14 +85,26 @@ def part2_vae_hyperparams():
 part2_q1 = r"""
 
 When we train the GAN we train in turns the discriminator and the genrator, each has its own objective.
-Upon training the discriminator the weights of the discriminators are updated using gradient descent toward a minimization of the binary cross entropy loss trying to adjust the classifier to assign the real data samples a label of 1 and to the fake samples label of 0 - 
-it thus needs to update the weights of the discriminator only, the calculation of the gradients to update these weights do not depend on the calculation path of the generator and thus unneeded and we should turn off the gradients of the generator in this turn (note that the weights of the generator are not to be updated in this turn).
-Upon training the generator, the objective is to update its weights toward minimization of BCEloss trying to "cheat" the discriminator, and label fake data as true, thus the gradients of the generator should be turned on. In this turn the gradients of the discriminator should also be turned on as the calculation for the gradients of the discriminator depends on the calculation path in the discriminator by backpropagation.
+\\ Upon training the discriminator, the weights of the discriminators are updated using gradient descent toward a minimization of the binary cross entropy loss.
+ Trying to adjust the classifier to assign the real data samples a label of 1 and to the fake samples label of 0 - it thus needs to update the weights of the discriminator only. 
+The calculation of the gradients to update these weights do not depend on the calculation path of the generator and thus unneeded and we should turn off the gradients of the generator in this turn (note that the weights of the generator are not to be updated in this turn).
+\\ Upon training the generator, the objective is to update its weights toward minimization of BCEloss trying to "cheat" the discriminator, and label fake data as true, thus the gradients of the generator should be turned on.
+ In this turn the gradients of the discriminator should also be turned on as the calculation for the gradients of the discriminator depends on the calculation path in the discriminator by backpropagation.
 
 
 """
 
 part2_q2 = r"""
+
+1. A generator loss can achieve very low values and pass a given threshold while the discriminator is still untrained and perform very poorly - resulting with poor results of generation as the generator learned how to "cheat" only an untrained discriminator (underfitting). Another example for situtation such that the gen loss gets low while the results can  be  better are if the generator gets stuck predicting around some constant example, in that case a method of identifying the situation is needed (visual inspection of the results for example) (Mode collapse).Also, the loss of the generator typically oscilates alot while training GANs. The losses by themselves are not nessecerily perfect indicators for good learning, but a parameter to look at while training.
+The visual inspection of the generated results can be very informational.  
+\\
+
+2. If the discriminator loss remains at a constant value while the generator loss decreases it means that the generator is fooling the discriminator faster than the discrimnator adapts. Might be because several of reasons: 
+1) The generator got good at generating some samples and is still improving in a way which fools the discriminator in spots it can't seem to improve at. 
+2) The discriminator got very good at the classification task and can't improve anymore, while the generator still hasn't reached its "fooling" potential and is still catching up.
+3) insufficent capacity as a clasifier for the discriminator or poor choice of hyperparameters for the optimizer chosen for the generator or the discriminator.
+
 
 
 """
