@@ -198,16 +198,18 @@ def train_batch(
     #  2. Calculate discriminator loss
     #  3. Update discriminator parameters
     # ====== YOUR CODE: ======
-    dsc_optimizer.zero_grad()
+    k=5
+    for i in range(k):
+        dsc_optimizer.zero_grad()
 
-    batch_size = x_data.shape[0]
-    x_gen = gen_model.sample(batch_size,with_grad=False)
-    y_gen = dsc_model(x_gen)
-    y_data = dsc_model(x_data)
-    dsc_loss = dsc_loss_fn(y_data,y_gen)
+        batch_size = x_data.shape[0]
+        x_gen = gen_model.sample(batch_size,with_grad=False)
+        y_gen = dsc_model(x_gen)
+        y_data = dsc_model(x_data)
+        dsc_loss = dsc_loss_fn(y_data,y_gen)
 
-    dsc_loss.backward()
-    dsc_optimizer.step()
+        dsc_loss.backward()
+        dsc_optimizer.step()
     # ========================
 
     # TODO: Generator update
@@ -238,15 +240,17 @@ def save_checkpoint(gen_model, dsc_losses, gen_losses, checkpoint_file):
     """
 
     saved = False
-    checkpoint_file = f"{checkpoint_file}.pt"
+    epoch=len(dsc_losses)
+    checkpoint_file = f"{checkpoint_file}_{epoch}.pt"
 
     # TODO:
     #  Save a checkpoint of the generator model. You can use torch.save().
     #  You should decide what logic to use for deciding when to save.
     #  If you save, set saved to True.
     # ====== YOUR CODE: ======
+    if epoch>10 and epoch%10==0:
+        torch.save(gen_model, checkpoint_file)
+        print(f"*** Saved checkpoint {checkpoint_file} ")
+        saved = True
     # ========================
-    torch.save(gen_model, checkpoint_file)
-    print(f"*** Saved checkpoint {checkpoint_file} ")
-    saved = True
     return saved

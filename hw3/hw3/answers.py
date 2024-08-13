@@ -116,17 +116,18 @@ part2_q4 = r"""
 # Part 3 answers
 
 def part3_gan_hyperparams():
-    lr = 0.0002
+    gen_lr = 0.0002
+    dsc_lr = 0.0001
     betas = (0.5 , 0.999)
-    dsc_optim_params= { 'type' : "Adam" , 'lr' : lr, 'betas': betas }
-    gen_optim_params= { 'type' : "Adam" , 'lr' : lr, 'betas': betas }
+    dsc_optim_params= { 'type' : "Adam" , 'lr' : dsc_lr, 'betas': betas }
+    gen_optim_params= { 'type' : "Adam" , 'lr' : gen_lr, 'betas': betas }
     hypers= dict(
         batch_size = 128,
         z_dim = 100,
         discriminator_optimizer = dsc_optim_params ,
         generator_optimizer =  gen_optim_params ,
         data_label = 1,
-        label_noise = 0.01
+        label_noise = 0.001
 
     )
     # Tweak them
@@ -134,8 +135,10 @@ def part3_gan_hyperparams():
     return hypers 
 
 
-#PART3_CUSTOM_DATA_URL = "/home/nativ/Deep_learning_technion/hw3/spongebob_images"
-PART3_CUSTOM_DATA_URL = None
+#PART3_CUSTOM_DATA_URL = "http://openminded-cat.static.domains/spongebob_pics_dataset.zip"
+#PART3_CUSTOM_DATA_URL = "https://drive.google.com/uc?export=download&id=1oBkD8mtp2eJjOwhmC_IR9Df17-xnbIY7&output=/spongebob_pics_dataset.zip" 
+PART3_CUSTOM_DATA_URL = "https://github.com/NatPath/spongebob_images_dataset/raw/main/spongebob_pics.zip"
+#PART3_CUSTOM_DATA_URL = None
 
 
 
