@@ -145,7 +145,8 @@ def hot_softmax(y, dim=0, temperature=1.0):
     """
     # TODO: Implement based on the above.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    y_exp_sum = torch.exp(y / temperature)
+    result = y_exp_sum / torch.sum(y_exp_sum, dim = dim, keepdim = True)
     # ========================
     return result
 
@@ -181,7 +182,16 @@ def generate_from_model(model, start_sequence, n_chars, char_maps, T):
     #  necessary for this. Best to disable tracking for speed.
     #  See torch.no_grad().
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    hidden_state = None
+    sequence = start_sequence
+    while len(out_text) < n_chars:
+        model_input = chars_to_onehot(sequence, char_to_idx).unsqueeze(0)
+        layer_output, hidden_state = model(model_input, hidden_state)
+        #print(torch.multinomial(hot_softmax(layer_output[0][-1], temperature = T), 1))
+        #print()
+        new_char = idx_to_char[int(torch.multinomial(hot_softmax(layer_output[0][-1], temperature = T), 1))]
+        out_text += new_char
+        sequence = sequence[1:] + new_char
     # ========================
 
     return out_text
@@ -259,10 +269,21 @@ class MultilayerGRU(nn.Module):
         # other layers: wxz(H,H), whz(H,H)
         self.why = nn.Linear(h_dim, out_dim)
         self.layer_params = []
-        self.layer_params.append({'wxz': nn.Linear(in_dim, h_dim), 'whz': nn.Linear(h_dim, h_dim), 'wxr': nn.Linear(in_dim, h_dim), 'whr': nn.Linear(h_dim, h_dim), 'wxg': nn.Linear(in_dim, h_dim), 'whg': nn.Linear(h_dim, h_dim)})
-        
+        self.layer_params.append({'wxz': nn.Linear(in_dim, h_dim), 'whz': nn.Linear(h_dim, h_dim, bias = False), 'wxr': nn.Linear(in_dim, h_dim), 'whr': nn.Linear(h_dim, h_dim, bias = False), 'wxg': nn.Linear(in_dim, h_dim), 'whg': nn.Linear(h_dim, h_dim, bias = False)})
+        self.add_module("wxz0", self.layer_params[0]["wxz"])
+        self.add_module("whz0", self.layer_params[0]["whz"])
+        self.add_module("wxr0", self.layer_params[0]["wxr"])
+        self.add_module("whr0", self.layer_params[0]["whr"])
+        self.add_module("wxg0", self.layer_params[0]["wxg"])
+        self.add_module("whg0", self.layer_params[0]["whg"])
         for layer in range(1, n_layers):
-            self.layer_params.append({'wxz': nn.Linear(h_dim, h_dim), 'whz': nn.Linear(h_dim, h_dim), 'wxr': nn.Linear(h_dim, h_dim), 'whr': nn.Linear(h_dim, h_dim), 'wxg': nn.Linear(h_dim, h_dim), 'whg': nn.Linear(h_dim, h_dim)})
+            self.layer_params.append({'wxz': nn.Linear(h_dim, h_dim), 'whz': nn.Linear(h_dim, h_dim, bias = False), 'wxr': nn.Linear(h_dim, h_dim), 'whr': nn.Linear(h_dim, h_dim, bias = False), 'wxg': nn.Linear(h_dim, h_dim), 'whg': nn.Linear(h_dim, h_dim, bias = False)})
+            self.add_module(f"wxz{layer}", self.layer_params[layer]["wxz"])
+            self.add_module(f"whz{layer}", self.layer_params[layer]["whz"])
+            self.add_module(f"wxr{layer}", self.layer_params[layer]["wxr"])
+            self.add_module(f"whr{layer}", self.layer_params[layer]["whr"])
+            self.add_module(f"wxg{layer}", self.layer_params[layer]["wxg"])
+            self.add_module(f"whg{layer}", self.layer_params[layer]["whg"])
 
         self.dropout = nn.Dropout(dropout, inplace = False)
         # ========================
@@ -313,10 +334,9 @@ class MultilayerGRU(nn.Module):
             # Loop over items in the sequence
             for seq_idx in range(seq_len):
                 x_t = layer_input[:, seq_idx, :]  # (B, V) or (B, H)
-
-                z_t = torch.sigmoid(wxz(x_t) + whz(h_t))
-                r_t = torch.sigmoid(wxr(x_t) + whr(h_t))
-                g_t = torch.tanh(wxg(x_t) + whg(r_t * h_t))
+                z_t = torch.sigmoid(wxz(x_t.float()) + whz(h_t))
+                r_t = torch.sigmoid(wxr(x_t.float()) + whr(h_t))
+                g_t = torch.tanh(wxg(x_t.float()) + whg(r_t * h_t))
                 h_t = z_t * h_t + (1 - z_t) * g_t
 
                 layer_outputs.append(h_t)  # (B, H)

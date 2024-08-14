@@ -224,7 +224,7 @@ class RNNTrainer(Trainer):
         # TODO: Implement modifications to the base method, if needed.
         # ====== YOUR CODE: ======
         
-        self.hidden_state = None    
+        self.hidden_state = None
             
         # ========================
         return super().train_epoch(dl_train, **kw)
@@ -250,7 +250,16 @@ class RNNTrainer(Trainer):
         #  - Update params
         #  - Calculate number of correct char predictions
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        output, hidden_state = self.model(x, self.hidden_state)
+        self.hidden_state = hidden_state
+        row, column = y.shape
+        y_onehot = torch.zeros((row, column, output.size(dim = 2)), dtype = torch.float)
+        y_onehot.scatter_(2, y.unsqueeze(-1), 1.0)
+        loss = self.loss_fn(output.float(), y_onehot.float())
+        self.optimizer.zero_grad()
+        loss.backward(retain_graph=True)
+        self.optimizer.step()
+        num_correct = torch.sum(y == torch.argmax(output, dim = 2))
         # ========================
 
         # Note: scaling num_correct by seq_len because each sample has seq_len
