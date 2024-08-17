@@ -22,7 +22,14 @@ def part1_rnn_hyperparams():
     )
     # TODO: Set the hyperparameters to train the model.
     # ====== YOUR CODE: ======
-    
+    hypers['batch_size'] = 64
+    hypers['seq_len'] = 80
+    hypers['h_dim'] = 128
+    hypers['n_layers'] = 3
+    hypers['dropout'] = 0.2
+    hypers['learn_rate'] = 1e-3
+    hypers['lr_sched_factor'] = 1e-1
+    hypers['lr_sched_patience'] = 4
     # ========================
     return hypers
 
@@ -38,8 +45,7 @@ def part1_generation_params():
 
 
 part1_q1 = r"""
-**Your answer:**
-
+There are several reasons to divide the corpus into sequences. One reason is to avoid over-fitting: dividing the text allows our model to observe different character combinations so it is less likely to just memorize the text. Another reason is that dividing the text allows the model to process the data more efficiantly. With an undivided text, the model will have only one layer and the process will be entirely serialized.
 """
 
 part1_q2 = r"""
@@ -48,14 +54,17 @@ part1_q2 = r"""
 """
 
 part1_q3 = r"""
-**Your answer:**
-
+The hidden state is passed between batches to improve the learning process. For the hidden state to be relevant to the new batch, the batches need to remain in order. Otherwise out model will pass irrelevant information that could worsen the learning process.
 """
 
 part1_q4 = r"""
-**Your answer:**
+1. Using a higher temperature results in a more uniform distribution. We want to choose the most likely chars, and lowering the temperature results in them being chosen more often, and unlikely chars being chosen less.
 
+2. A very high temperature results in a uniform distribution. As seen in the softmax formula:
+$\text{hot_softmax}_T(y) = \frac{e^{y/T}}{\sum_k e^{y_k/T}}$,
+when T (temperature) is very high, $e^{y/T}\rightarrow 1$ and the distribution becomes uniform.
 
+3. A very low temperature results in a more erratic distribution. Chars with higher relative probabilities get even higher probabilities, and chars with lower ones become even lower.
 """
 # ==============
 
