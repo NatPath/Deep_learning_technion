@@ -145,8 +145,8 @@ def hot_softmax(y, dim=0, temperature=1.0):
     """
     # TODO: Implement based on the above.
     # ====== YOUR CODE: ======
-    y_exp_sum = torch.exp(y / temperature)
-    result = y_exp_sum / torch.sum(y_exp_sum, dim = dim, keepdim = True)
+    softmax = nn.Softmax(dim=dim) #TODO check if legal
+    result = softmax(y/temperature)
     # ========================
     return result
 
@@ -182,16 +182,20 @@ def generate_from_model(model, start_sequence, n_chars, char_maps, T):
     #  necessary for this. Best to disable tracking for speed.
     #  See torch.no_grad().
     # ====== YOUR CODE: ======
-    hidden_state = None
-    sequence = start_sequence
-    while len(out_text) < n_chars:
-        model_input = chars_to_onehot(sequence, char_to_idx).unsqueeze(0)
-        layer_output, hidden_state = model(model_input, hidden_state)
-        #print(torch.multinomial(hot_softmax(layer_output[0][-1], temperature = T), 1))
-        #print()
-        new_char = idx_to_char[int(torch.multinomial(hot_softmax(layer_output[0][-1], temperature = T), 1))]
-        out_text += new_char
-        sequence = sequence[1:] + new_char
+    with torch.no_grad():
+        start_sequence_matrix = chars_to_onehot(start_sequence, char_to_idx).unsqueeze(0).type(torch.float).to(device)
+        y, hidden_state = model(start_sequence_matrix)
+        y = hot_softmax(y.squeeze(0)[-1, :], -1, T)
+        y = torch.multinomial(y, 1)
+        y = idx_to_char[y.item()]
+        out_text += y
+        while len(out_text) < n_chars:
+            y_matrix = chars_to_onehot(y, char_to_idx).unsqueeze(0).type(torch.float).to(device)
+            y, hidden_state = model(y_matrix, hidden_state)
+            y = hot_softmax(y[0, -1, :], -1, T)
+            y = torch.multinomial(y, 1)
+            y = idx_to_char[y.item()]
+            out_text += y
     # ========================
 
     return out_text
@@ -244,8 +248,8 @@ class MultilayerGRU(nn.Module):
         """
         :param in_dim: Number of input dimensions (at each timestep).
         :param h_dim: Number of hidden state dimensions.
-        :param out_dim: Number of output dimensions (at each timestep).
-        :param n_layers: Number of layers in the model.
+        :param out_dim: Number of input dimensions (at each timestep).
+        :param n_layers: Number of layer in the model.
         :param dropout: Level of dropout to apply between layers. Zero
         disables.
         """
@@ -258,34 +262,44 @@ class MultilayerGRU(nn.Module):
         self.n_layers = n_layers
         self.layer_params = []
 
-        # TODO: READ THIS SECTION!!
-
+        # TODO: Create the parameters of the model for all layers.
+        #  To implement the affine transforms you can use either nn.Linear
+        #  modules (recommended) or create W and b tensor pairs directly.
+        #  Create these modules or tensors and save them per-layer in
+        #  the layer_params list.
+        #  Important note: You must register the created parameters so
+        #  they are returned from our module's parameters() function.
+        #  Usually this happens automatically when we assign a
+        #  module/tensor as an attribute in our module, but now we need
+        #  to do it manually since we're not assigning attributes. So:
+        #    - If you use nn.Linear modules, call self.add_module() on them
+        #      to register each of their parameters as part of your model.
+        #    - If you use tensors directly, wrap them in nn.Parameter() and
+        #      then call self.register_parameter() on them. Also make
+        #      sure to initialize them. See functions in torch.nn.init.
         # ====== YOUR CODE: ======
-        # z_t: (B,H)
-        # h_t: (B,H)
-        # g_t: (B,H)
-        # layer_params: List of dictionaries
-        # Layer 1: wxz(V,H), whz(H,H), same for wx/hr and wx/hg
-        # other layers: wxz(H,H), whz(H,H)
-        self.why = nn.Linear(h_dim, out_dim)
-        self.layer_params = []
-        self.layer_params.append({'wxz': nn.Linear(in_dim, h_dim), 'whz': nn.Linear(h_dim, h_dim, bias = False), 'wxr': nn.Linear(in_dim, h_dim), 'whr': nn.Linear(h_dim, h_dim, bias = False), 'wxg': nn.Linear(in_dim, h_dim), 'whg': nn.Linear(h_dim, h_dim, bias = False)})
-        self.add_module("wxz0", self.layer_params[0]["wxz"])
-        self.add_module("whz0", self.layer_params[0]["whz"])
-        self.add_module("wxr0", self.layer_params[0]["wxr"])
-        self.add_module("whr0", self.layer_params[0]["whr"])
-        self.add_module("wxg0", self.layer_params[0]["wxg"])
-        self.add_module("whg0", self.layer_params[0]["whg"])
-        for layer in range(1, n_layers):
-            self.layer_params.append({'wxz': nn.Linear(h_dim, h_dim), 'whz': nn.Linear(h_dim, h_dim, bias = False), 'wxr': nn.Linear(h_dim, h_dim), 'whr': nn.Linear(h_dim, h_dim, bias = False), 'wxg': nn.Linear(h_dim, h_dim), 'whg': nn.Linear(h_dim, h_dim, bias = False)})
-            self.add_module(f"wxz{layer}", self.layer_params[layer]["wxz"])
-            self.add_module(f"whz{layer}", self.layer_params[layer]["whz"])
-            self.add_module(f"wxr{layer}", self.layer_params[layer]["wxr"])
-            self.add_module(f"whr{layer}", self.layer_params[layer]["whr"])
-            self.add_module(f"wxg{layer}", self.layer_params[layer]["wxg"])
-            self.add_module(f"whg{layer}", self.layer_params[layer]["whg"])
+        self.dropout = nn.Dropout(p=dropout)
+        self.sigmoid = nn.Sigmoid()
+        self.tanh = nn.Tanh()
+        layer_in_dim = self.in_dim
+        for layer in range(n_layers):
+            layer_dict = dict()
+            layer_dict['whz'] = nn.Linear(in_features=self.h_dim, out_features=self.h_dim, bias=True)
+            layer_dict['whr'] = nn.Linear(in_features=self.h_dim, out_features=self.h_dim, bias=True)
+            layer_dict['whg'] = nn.Linear(in_features=self.h_dim, out_features=self.h_dim, bias=True)
+            layer_dict['wxz'] = nn.Linear(in_features=layer_in_dim, out_features=self.h_dim, bias=False)
+            layer_dict['wxr'] = nn.Linear(in_features=layer_in_dim, out_features=self.h_dim, bias=False)
+            layer_dict['wxg'] = nn.Linear(in_features=layer_in_dim, out_features=self.h_dim, bias=False)
 
-        self.dropout = nn.Dropout(dropout, inplace = False)
+            self.layer_params.append(layer_dict)
+            for key, val in layer_dict.items():
+                self.add_module(name=f"layer{layer}_"+key, module=val)
+            layer_in_dim = self.h_dim
+
+        why = nn.Linear(in_features=layer_in_dim, out_features=self.out_dim, bias=True)
+        self.layer_params.append(why)
+        self.add_module(name="why", module=why)
+
         # ========================
 
     def forward(self, input: Tensor, hidden_state: Tensor = None):
@@ -317,42 +331,32 @@ class MultilayerGRU(nn.Module):
         layer_input = input
         layer_output = None
 
-        # TODO: READ THIS SECTION!!
+        # TODO:
+        #  Implement the model's forward pass.
+        #  You'll need to go layer-by-layer from bottom to top (see diagram).
+        #  Tip: You can use torch.stack() to combine multiple tensors into a
+        #  single tensor in a differentiable manner.
         # ====== YOUR CODE: ======
-        # Loop over layers of the model
-        for layer_idx in range(self.n_layers):
-            wxz = self.layer_params[layer_idx]["wxz"]
-            whz = self.layer_params[layer_idx]["whz"]
-            wxr = self.layer_params[layer_idx]["wxr"]
-            whr = self.layer_params[layer_idx]["whr"]
-            wxg = self.layer_params[layer_idx]["wxg"]
-            whg = self.layer_params[layer_idx]["whg"]
 
-            h_t = layer_states[layer_idx]  # (B, H)
-            layer_outputs = []
+        layer_output = []
+        for t in range(seq_len):
+            prev_hidden_state = torch.stack(layer_states, dim=1)
+            layer_states = []
+            curr_x = input[:, t, :]
 
-            # Loop over items in the sequence
-            for seq_idx in range(seq_len):
-                x_t = layer_input[:, seq_idx, :]  # (B, V) or (B, H)
-                z_t = torch.sigmoid(wxz(x_t.float()) + whz(h_t))
-                r_t = torch.sigmoid(wxr(x_t.float()) + whr(h_t))
-                g_t = torch.tanh(wxg(x_t.float()) + whg(r_t * h_t))
-                h_t = z_t * h_t + (1 - z_t) * g_t
-
-                layer_outputs.append(h_t)  # (B, H)
-
-            # Save last state as layer state
-            layer_states[layer_idx] = h_t
-
-            # Combine the output from each element in the sequence to a tensor
-            # representing the output of the entire sequence
-            layer_output = torch.stack(layer_outputs, dim=1)  # (B, S, H)
-
-            # Prepare input for next layer
-            layer_input = self.dropout(layer_output)  # (B, S, H)
-
-        # Final output: transform the input to the next (non-existent) layer
-        layer_output = self.why(layer_input)  # (B, S, O)
-        hidden_state = torch.stack(layer_states, dim=1)  # (B, L, H)
+            for k, layer in enumerate(self.layer_params):
+                if isinstance(layer, dict):
+                    h_k = prev_hidden_state[:, k, :]
+                    z = self.sigmoid(layer['wxz'](curr_x) + layer['whz'](h_k))
+                    r = self.sigmoid(layer['wxr'](curr_x) + layer['whr'](h_k))
+                    g = self.tanh(layer['wxg'](curr_x) + layer['whg'](r * h_k))
+                    h = z * h_k + (1 - z) * g
+                    layer_states.append(h.clone())
+                    curr_x = self.dropout(h)
+                else:
+                    layer_output.append(layer(curr_x))
+        hidden_state = torch.stack(layer_states, dim=1)
+        layer_output = torch.stack(layer_output, dim=1)
         # ========================
+
         return layer_output, hidden_state

@@ -61,9 +61,10 @@ class Trainer(abc.ABC):
         :return: A FitResult object containing train and test losses per epoch.
         """
         actual_num_epochs = 0
-        train_loss, train_acc, test_loss, test_acc = [], [], [], []
+        training_loss, training_acc, testing_loss, testing_acc = [], [], [], []
 
         best_acc = None
+        best_testing_loss = None
         epochs_without_improvement = 0
 
         checkpoint_filename = None
@@ -93,9 +94,27 @@ class Trainer(abc.ABC):
             #  - Implement early stopping. This is a very useful and
             #    simple regularization technique that is highly recommended.
             # ====== YOUR CODE: ======
-            
-            raise NotImplementedError()
+            actual_num_epochs += 1
+            training_result = self.train_epoch(dl_train, verbose=verbose, **kw)
+            testing_result = self.test_epoch(dl_test, verbose=verbose, **kw)
+            training_loss.extend(training_result.losses)
+            training_acc.append(training_result.accuracy)
+            testing_loss.extend(testing_result.losses)
+            testing_acc.append(testing_result.accuracy)
 
+            if (best_acc is None) or (testing_result.accuracy > best_acc):
+                save_checkpoint = True
+                best_acc = testing_result.accuracy
+
+            new_testing_loss = torch.mean(torch.stack(testing_result.losses)) if isinstance(testing_result.losses[0], torch.Tensor) \
+                else sum(testing_result.losses) / len(testing_result.losses)
+            if (best_testing_loss is None) or (new_testing_loss < best_testing_loss):
+                best_testing_loss = new_testing_loss
+                epochs_without_improvement = 0
+            else:
+                epochs_without_improvement += 1
+            if (early_stopping is not None) and (epochs_without_improvement == early_stopping):
+                break
             # ========================
 
             # Save model checkpoint if requested
@@ -111,9 +130,9 @@ class Trainer(abc.ABC):
                 )
 
             if post_epoch_fn:
-                post_epoch_fn(epoch, train_result, test_result, verbose)
+                post_epoch_fn(epoch, training_result, testing_result, verbose)
 
-        return FitResult(actual_num_epochs, train_loss, train_acc, test_loss, test_acc)
+        return FitResult(actual_num_epochs, training_loss, training_acc, testing_loss, testing_acc)
 
     def train_epoch(self, dl_train: DataLoader, **kw) -> EpochResult:
         """
@@ -251,15 +270,21 @@ class RNNTrainer(Trainer):
         #  - Calculate number of correct char predictions
         # ====== YOUR CODE: ======
         output, hidden_state = self.model(x, self.hidden_state)
-        self.hidden_state = hidden_state
-        row, column = y.shape
-        y_onehot = torch.zeros((row, column, output.size(dim = 2)), dtype = torch.float)
-        y_onehot.scatter_(2, y.unsqueeze(-1), 1.0)
-        loss = self.loss_fn(output.float(), y_onehot.float())
+
+        # Backward pass
         self.optimizer.zero_grad()
-        loss.backward(retain_graph=True)
+        loss = 0
+        for i in range(seq_len):
+            loss += self.loss_fn(output[:, i, :], y[:, i])
+        loss.backward()
+
+        # Weight updates
         self.optimizer.step()
-        num_correct = torch.sum(y == torch.argmax(output, dim = 2))
+
+        # Calculate accuracy
+        output = torch.argmax(output, dim=-1)
+        num_correct = torch.sum(output == y).float()
+        self.hidden_state = hidden_state.detach()
         # ========================
 
         # Note: scaling num_correct by seq_len because each sample has seq_len
@@ -279,7 +304,14 @@ class RNNTrainer(Trainer):
             #  - Loss calculation
             #  - Calculate number of correct predictions
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            with torch.no_grad():
+                output, hidden_state = self.model(x, self.hidden_state)
+                loss = 0
+                for i in range(seq_len):
+                    loss += self.loss_fn(output[:, i, :], y[:, i])
+                output = torch.argmax(output, dim=-1)
+                num_correct = torch.sum(output == y).float()
+                self.hidden_state = hidden_state.detach()
             # ========================
 
         return BatchResult(loss.item(), num_correct.item() / seq_len)
