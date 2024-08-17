@@ -39,7 +39,8 @@ def part1_generation_params():
     temperature = 0.0001
     # TODO: Tweak the parameters to generate a literary masterpiece.
     # ====== YOUR CODE: ======
-    
+    start_seq = "ACT 1.\nenter SHREK\nSHREK. Somebody once told me "
+    temperature = 1e-5
     # ========================
     return start_seq, temperature
 
@@ -49,8 +50,7 @@ There are several reasons to divide the corpus into sequences. One reason is to 
 """
 
 part1_q2 = r"""
-**Your answer:**
-
+The text generation uses the model's hidden state, whice does not depand on the length of the sequences, so generating text of different lengths is possible.
 """
 
 part1_q3 = r"""
