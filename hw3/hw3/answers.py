@@ -210,36 +210,25 @@ This scheme allows slightly broader context for each token as it can see farther
 """
 
 
-part4_q1 = r"""
-**Your answer:**
-
-
-"""
-
 part4_q2 = r"""
-**Your answer:**
-
-
+The model would not be able to fine-tune using this method. In pre-trained language models, the last layers are typically responsible for generating high-level, task-specific representations. Freezing these layers means that these representations remain fixed, and any updates made to the internal layers may not effectively align with the specific task.
 """
 
 
 part4_q3= r"""
-**Your answer:**
-
-
+Since BERT is an encoder only model, and machine translation requires encoder-decoder (for proccessing input text and generating output text), BERT cannot be used for translation tasks.
 """
 
 part4_q4 = r"""
-**Your answer:**
-
-
+The main reason to choose RNN over a transformer is its ability to Handle Long Sequences with Limited Resources.
+RNNs process sequences sequentially, meaning they don’t require storing or computing pairwise attention over the entire input sequence like Transformers do. For tasks where you need to handle very long sequences with limited memory, RNNs can be more efficient since they only store hidden states across time steps rather than full attention matrices. This can be advantageous when computational resources are constrained.
 """
 
 part4_q5 = r"""
-**Your answer:**
-
-
+NSP trains the model to determine whether or not two sentences are immidiately connected in a text, meaning one comes right after the other. Loss comes from the predicted certainty of both options. the more certain the model is of the correct answer (connected/not connected), the lower the loss is.
+Next Sentence Prediction is a crucial part of pre-training, because it provides context for entire sentences, and not only words.
 """
 
 
 # ==============
+
