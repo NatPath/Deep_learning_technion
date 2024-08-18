@@ -176,13 +176,13 @@ def part3_transformer_encoder_hyperparams():
 
     # TODO: Tweak the hyperparameters to train the transformer encoder.
     # ====== YOUR CODE: ======
-    hypers["embed_dim"] = 128
-    hypers["num_heads"] = 8
-    hypers["num_layers"] = 4
+    hypers["embed_dim"] = 256
+    hypers["num_heads"] = 2
+    hypers["num_layers"] = 3
     hypers["hidden_dim"] = 128 
     hypers["window_size"] = 32
-    hypers["droupout"] = 0.2
-    hypers["lr"] = 0.0001
+    hypers["droupout"] = 0.1
+    hypers["lr"] = 0.0002
     
     # ========================
     return hypers
@@ -198,8 +198,14 @@ Which means that as the depth increases the context broadens because the effect 
 """
 
 part3_q2 = r"""
-**Your answer:**
+SESWA -Smudged edges sliding window attention:
+We propose a variation for the sliding window which enables slightly broader conext while maintaining the same running time complexity.
 
+The variation goes as follows, given a window_size the same as in the sliding window algorithms, the window of attention for each token will be  of size (window_size-2).
+Now, taking the edges of the original window and allowing them to travel randomly to another index which is not in the window (randomly by some distribution of the distance from the left/right edges- a distibution which would make sense here would be geometrical for example).
+This allows the same masking scheme which enables O(n(w-1)) opperations, and taking into acount the smudges edges in O(n) in total O(nw). 
+
+This scheme allows slightly broader context for each token as it can see farther from it in each step, the effect will also accumulate in a similar manner to that discribed in q1.
 
 """
 
