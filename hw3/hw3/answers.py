@@ -209,6 +209,9 @@ This scheme allows slightly broader context for each token as it can see farther
 
 """
 
+part4_q1 = r"""
+Compared to the model from part 3, which achieved 65% accuracy, this model is far better, with over 85% accuracy in both methods of fine-tuning. This model is more robust, was pre-trained on a larger data set, and was trained by someone with more experience than an undergrad student. It was also fine-tuned to get better results.
+"""
 
 part4_q2 = r"""
 The model would not be able to fine-tune using this method. In pre-trained language models, the last layers are typically responsible for generating high-level, task-specific representations. Freezing these layers means that these representations remain fixed, and any updates made to the internal layers may not effectively align with the specific task.
