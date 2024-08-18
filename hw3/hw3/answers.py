@@ -184,7 +184,9 @@ def part3_transformer_encoder_hyperparams():
 
 
 part3_q1 = r"""
-**Your answer:**
+Stacking encoder layers increase the rception field, similarly to stacking convolution layers. Each layer of the encoder increase the distance of influence of a certain token as the output of the layer combines to the same index of the token all the tokens in that window. thus in a later layer a token on the left will see farther to the right.
+Which means that as the depth increases the context broadens because the effect of all the layers accumulates.
+
 
 """
 
