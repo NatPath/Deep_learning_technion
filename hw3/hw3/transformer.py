@@ -56,17 +56,6 @@ def sliding_window_attention_classic(q, k, v, window_size, padding_mask=None):
     qk_softmaxed=torch.softmax(qk_masked,dim=-1)
     return torch.matmul(qk_softmaxed,v),qk_softmaxed
 
-def pad_tensor_symetric(A, padding_mask,r):
-    a,b,c,_ = A.shape
-        # Create a mask for the dimensions to be replaced
-    mask = padding_mask==0
-    mask_expanded = mask.unsqueeze(1).unsqueeze(-1).expand(a, b, c, c)
-    # Replace the specified slices
-    A[mask_expanded] = r
-    A.transpose(2, 3)[mask_expanded] = r
-    
-    return A
-
 def pad_tensor(V, padding_mask, r):
     a, b, c, d = V.shape
     
@@ -83,6 +72,18 @@ def pad_tensor(V, padding_mask, r):
     # print(f'V zerod {V_zeroed}')
     
     return V_zeroed
+
+def pad_tensor_symetric(A, padding_mask,r):
+    a,b,c,_ = A.shape
+        # Create a mask for the dimensions to be replaced
+    mask = padding_mask==0
+    mask_expanded = mask.unsqueeze(1).unsqueeze(-1).expand(a, b, c, c)
+    # Replace the specified slices
+    A[mask_expanded] = r
+    A.transpose(2, 3)[mask_expanded] = r
+    
+    return A
+
 
 
 def sliding_window_attention(q, k, v, window_size, padding_mask=None):
@@ -116,18 +117,19 @@ def sliding_window_attention(q, k, v, window_size, padding_mask=None):
     ## Think how you can obtain the indices corresponding to the entries in the sliding windows using tensor operations (without loops),
     ## and then use these indices to compute the dot products directly.
     # ====== YOUR CODE: ======
+    torch.autograd.set_detect_anomaly(True)
     
     inf_def = float(-9e15)
 
     is_multi_head = len(q.shape) == 4
     num_heads = q.shape[1] if is_multi_head else 1
 
-    qk=torch.matmul(q,k.transpose(-1,-2))/embed_dim**0.5
-    if not is_multi_head:
-        qk=qk.unsqueeze(1)
-    qk_masked = mask_outside_diagonals(qk,window_size//2)
-    qk_softmaxed=torch.softmax(qk_masked,dim=-1)
-    expected_attention = pad_tensor_symetric(qk_softmaxed,padding_mask,0)
+    # qk=torch.matmul(q,k.transpose(-1,-2))/embed_dim**0.5
+    # if not is_multi_head:
+    #     qk=qk.unsqueeze(1)
+    # qk_masked = mask_outside_diagonals(qk,window_size//2)
+    # qk_softmaxed=torch.softmax(qk_masked,dim=-1)
+    # expected_attention = pad_tensor_symetric(qk_softmaxed,padding_mask,0)
     # print(qk)
     # print(qk_masked)
 
@@ -146,49 +148,20 @@ def sliding_window_attention(q, k, v, window_size, padding_mask=None):
     # Compute attention scores
     q_expanded = q.unsqueeze(-2)  # [Batch, Heads, SeqLen, 1, Dim]
     attention_scores = torch.matmul(q_expanded, k_windows.transpose(-1, -2)).squeeze(-2)
-    # print(f'k_windows shape {k_windows.shape}')
-    # print(f'k_windows {k_windows}')
-    # print(f'q_expanded shape {q_expanded.shape}')
-    # print(f'q_expanded {q_expanded}')
-    #print(f'attention_scores shape {attention_scores.shape}')
-    # print(f'attention_scores {attention_scores}')
-
-    # attention_scores = attention_scores / (embed_dim ** 0.5)
 
     
     attention_scores_full = torch.zeros(batch_size, num_heads, seq_len, seq_len, device=q.device)
     attention_scores_full.scatter_(3, window_indices.unsqueeze(0).unsqueeze(1).expand(batch_size, num_heads, -1, -1), attention_scores)
     attention_scores_full_masked = mask_outside_diagonals(attention_scores_full,window_size//2)
 
-    # Apply padding mask if provided
-    # if padding_mask is not None:
-    #     # print(f'window size {window_size}' )
-    #     # print(f'attention scores shape {attention_scores.shape}')
-    #     # print(f'attention scores {attention_scores}')
-    #     # print(f'this is the padding mask {padding_mask}')
-    #     # print(f'while its shape is {padding_mask.shape}')
-    #     # print(f'and q,k shape is {q.shape}')
-    #     # print(f'have fun!')
-    #     # mask = (1-padding_mask) * float('-inf') 
-    #     # mask_windows = padding_mask.gather(3, window_indices.unsqueeze(0).unsqueeze(0))
-    #     # attention_scores = attention_scores.masked_fill(mask_windows, float('-inf'))
-
-    #     # padding_mask = padding_mask.unsqueeze(-2).unsqueeze(-2)  # [Batch, 1, 1, SeqLen]
-    #     # print(f'attention_scores before {attention_scores_full_masked}')
-    #     # attention_scores_full_masked = attention_scores_full_masked.masked_fill_(mask= (padding_mask==0),value=torch.tensor(-9e15))
-    #     # print(f'attention_scores after {attention_scores_full_masked}')
-    #     padding_mask = padding_mask.unsqueeze(1).unsqueeze(3)
-    #     mask = (1- padding_mask) * -1e15
-    #     attention_scores_full_masked= attention_scores_full_masked+ mask
     attention_scores_full_masked = attention_scores_full_masked / (embed_dim ** 0.5)
+    # Apply padding mask if provided
     if padding_mask is not None:
         attention_scores_full_masked = pad_tensor_symetric(attention_scores_full_masked,padding_mask.bool(),-9e15)
         attention = F.softmax(attention_scores_full_masked, dim=-1)
-        attention = pad_tensor_symetric(attention ,padding_mask.bool(),0)
+        attention = pad_tensor_symetric(attention.clone() ,padding_mask.bool(),0)
         if not is_multi_head:
             attention = attention.squeeze(1)
-        # v_zeroed= pad_tensor(v,padding_mask.bool(),0)
-        # values = torch.matmul(attention, v_zeroed)
         values = torch.matmul(attention, v)
     else:
         # Compute attention weights
