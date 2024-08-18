@@ -400,14 +400,22 @@ class FineTuningTrainer(Trainer):
     def train_batch(self, batch) -> BatchResult:
         
         input_ids = batch["input_ids"].to(self.device)
-        attention_masks = batch["attention_mask"]
-        labels= batch["label"]
+        attention_masks = batch["attention_mask"].to(self.device)
+        labels= batch["label"].to(self.device)
         # TODO:
         #  fill out the training loop.
         # ====== YOUR CODE: ======
+        self.optimizer.zero_grad()
+        logits = self.model(input_ids, attention_mask = attention_masks).logits
+        loss = self.model(input_ids, attention_mask = attention_masks, labels = labels).loss
+        predicted_class_id = logits.argmax()
+        preds_correct = (predicted_class_id == labels)
+        num_correct = preds_correct.sum().item()
+        loss.backward()
+        self.optimizer.step()
 
-        raise NotImplementedError()
-        
+        loss = loss.detach()
+        loss = loss.cpu()
         # ========================
         
         return BatchResult(loss, num_correct)
@@ -415,13 +423,21 @@ class FineTuningTrainer(Trainer):
     def test_batch(self, batch) -> BatchResult:
         
         input_ids = batch["input_ids"].to(self.device)
-        attention_masks = batch["attention_mask"]
-        labels= batch["label"]
+        attention_masks = batch["attention_mask"].to(self.device)
+        labels= batch["label"].to(self.device)
         
         with torch.no_grad():
             # TODO:
             #  fill out the training loop.
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            with torch.no_grad():
+                logits = self.model(input_ids, attention_mask = attention_masks).logits
+                loss = self.model(input_ids, attention_mask = attention_masks, labels = labels).loss
+                loss = loss.detach()
+                predicted_class_id = logits.argmax()
+                preds_correct = (predicted_class_id == labels)
+                num_correct = preds_correct.sum().item()
+
+                loss = loss.cpu()
             # ========================
         return BatchResult(loss, num_correct)
