@@ -20,7 +20,7 @@ class Trainer(abc.ABC):
     - Single batch (train_batch/test_batch)
     """
 
-    def __init__(self, model, loss_fn, optimizer, device="cpu"):
+    def __init__(self, model, loss_fn, optimizer, device="cuda"):
         """
         Initialize the trainer.
         :param model: Instance of the model to train.
@@ -342,10 +342,9 @@ class VAETrainer(Trainer):
 
 
 class TransformerEncoderTrainer(Trainer):
+
     def train_batch(self, batch) -> BatchResult:
         
-        self.device='cuda'
-
         input_ids = batch['input_ids'].to(self.device)
         attention_mask = batch['attention_mask'].float().to(self.device)
         label = batch['label'].float().to(self.device)
@@ -356,7 +355,7 @@ class TransformerEncoderTrainer(Trainer):
         #  fill out the training loop.
         # ====== YOUR CODE: ======
         self.optimizer.zero_grad()
-        y_out = self.model.forward(input_ids,attention_mask)
+        y_out = self.model.forward(input_ids,attention_mask).squeeze(1).to(self.device)
         loss= self.loss_fn(y_out,label)
         loss.backward()
         self.optimizer.step()
@@ -383,7 +382,7 @@ class TransformerEncoderTrainer(Trainer):
             # TODO:
             #  fill out the testing loop.
             # ====== YOUR CODE: ======
-            y_out = self.model.forward(input_ids,attention_mask)
+            y_out = self.model.forward(input_ids,attention_mask).squeeze(1)
             loss= self.loss_fn(y_out,label)
 
             predictions = torch.round(torch.sigmoid(y_out))
