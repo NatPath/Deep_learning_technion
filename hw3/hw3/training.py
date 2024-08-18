@@ -342,9 +342,10 @@ class VAETrainer(Trainer):
 
 
 class TransformerEncoderTrainer(Trainer):
-    
     def train_batch(self, batch) -> BatchResult:
         
+        self.device='cuda'
+
         input_ids = batch['input_ids'].to(self.device)
         attention_mask = batch['attention_mask'].float().to(self.device)
         label = batch['label'].float().to(self.device)
@@ -354,7 +355,15 @@ class TransformerEncoderTrainer(Trainer):
         # TODO:
         #  fill out the training loop.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        self.optimizer.zero_grad()
+        y_out = self.model.forward(input_ids,attention_mask)
+        loss= self.loss_fn(y_out,label)
+        loss.backward()
+        self.optimizer.step()
+
+        predictions = torch.round(torch.sigmoid(y_out))
+        num_correct = (predictions == label).sum()
+
         # ========================
         
         
@@ -362,6 +371,7 @@ class TransformerEncoderTrainer(Trainer):
         return BatchResult(loss.item(), num_correct.item())
         
     def test_batch(self, batch) -> BatchResult:
+        self.device='cuda'
         with torch.no_grad():
             input_ids = batch['input_ids'].to(self.device)
             attention_mask = batch['attention_mask'].float().to(self.device)
@@ -373,7 +383,11 @@ class TransformerEncoderTrainer(Trainer):
             # TODO:
             #  fill out the testing loop.
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            y_out = self.model.forward(input_ids,attention_mask)
+            loss= self.loss_fn(y_out,label)
+
+            predictions = torch.round(torch.sigmoid(y_out))
+            num_correct = (predictions == label).sum()
             # ========================
 
             

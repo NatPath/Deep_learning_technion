@@ -79,8 +79,8 @@ def pad_tensor(V, padding_mask, r):
     # Replace the values in V[i,:,j,:] with r
     V_zeroed = V.clone()
     V_zeroed[mask_expanded] = r
-    print(f'V {V}')
-    print(f'V zerod {V_zeroed}')
+    # print(f'V {V}')
+    # print(f'V zerod {V_zeroed}')
     
     return V_zeroed
 
@@ -117,16 +117,19 @@ def sliding_window_attention(q, k, v, window_size, padding_mask=None):
     ## and then use these indices to compute the dot products directly.
     # ====== YOUR CODE: ======
     
-    # qk=torch.matmul(q,k.transpose(-1,-2))/embed_dim**0.5
-    # qk_masked = mask_outside_diagonals(qk.unsqueeze(1),window_size//2)
-    # qk_softmaxed=torch.softmax(qk_masked,dim=-1)
-    # print(qk)
-    # print(qk_masked)
-    # print(qk_softmaxed)
     inf_def = float(-9e15)
 
     is_multi_head = len(q.shape) == 4
     num_heads = q.shape[1] if is_multi_head else 1
+
+    qk=torch.matmul(q,k.transpose(-1,-2))/embed_dim**0.5
+    if not is_multi_head:
+        qk=qk.unsqueeze(1)
+    qk_masked = mask_outside_diagonals(qk,window_size//2)
+    qk_softmaxed=torch.softmax(qk_masked,dim=-1)
+    expected_attention = pad_tensor_symetric(qk_softmaxed,padding_mask,0)
+    # print(qk)
+    # print(qk_masked)
 
     indices = torch.arange(seq_len, device=q.device)
     window_indices = indices.unsqueeze(1) + torch.arange(-window_size//2, window_size//2+1, device=q.device)
@@ -177,28 +180,27 @@ def sliding_window_attention(q, k, v, window_size, padding_mask=None):
     #     padding_mask = padding_mask.unsqueeze(1).unsqueeze(3)
     #     mask = (1- padding_mask) * -1e15
     #     attention_scores_full_masked= attention_scores_full_masked+ mask
+    attention_scores_full_masked = attention_scores_full_masked / (embed_dim ** 0.5)
     if padding_mask is not None:
-        print(f'attention scores before padding_mask {attention_scores_full_masked}')
         attention_scores_full_masked = pad_tensor_symetric(attention_scores_full_masked,padding_mask.bool(),-9e15)
-        print(f'attention scores after padding_mask {attention_scores_full_masked}')
-        attention_scores_full_masked = attention_scores_full_masked / (embed_dim ** 0.5)
+        attention = F.softmax(attention_scores_full_masked, dim=-1)
+        attention = pad_tensor_symetric(attention ,padding_mask.bool(),0)
+        if not is_multi_head:
+            attention = attention.squeeze(1)
+        # v_zeroed= pad_tensor(v,padding_mask.bool(),0)
+        # values = torch.matmul(attention, v_zeroed)
+        values = torch.matmul(attention, v)
+    else:
+        # Compute attention weights
         attention = F.softmax(attention_scores_full_masked, dim=-1)
         if not is_multi_head:
             attention = attention.squeeze(1)
-        v_zeroed= pad_tensor(v,padding_mask.bool(),0)
-        values = torch.matmul(attention, v_zeroed)
-        return values, attention
-
-    attention_scores_full_masked = attention_scores_full_masked / (embed_dim ** 0.5)
-
-    # Compute attention weights
-    attention = F.softmax(attention_scores_full_masked, dim=-1)
-    print(f'attension after softmax {attention}')
-    if not is_multi_head:
-        attention = attention.squeeze(1)
-    # Compute output values
-    values = torch.matmul(attention, v)
+        # Compute output values
+        values = torch.matmul(attention, v)
     # ========================
+    # print(f'attention {attention}')
+    # print(f'expected attention {expected_attention}')
+    # print(f'attentions diff {attention-expected_attention}')
     return values, attention
 
 
@@ -385,11 +387,10 @@ class Encoder(nn.Module):
         x = self.encoder_embedding(sentence)
         x = self.positional_encoding(x)
         x = self.dropout(x) 
-        layers=[]
         for encoder in self.encoder_layers:
-            layers.append(encoder(x,padding_mask))
-        x = torch.cat(layers,dim=1)
-        output = self.classification_mlp(x[:,0]).squeeze(-1)
+            x=encoder(x,padding_mask)
+
+        output = self.classification_mlp(x)[:,0,0].unsqueeze(1)
 
 
         
