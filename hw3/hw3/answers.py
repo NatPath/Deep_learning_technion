@@ -46,15 +46,15 @@ def part1_generation_params():
 
 
 part1_q1 = r"""
-There are several reasons to divide the corpus into sequences. One reason is to avoid over-fitting: dividing the text allows our model to observe different character combinations so it is less likely to just memorize the text. Another reason is that dividing the text allows the model to process the data more efficiantly. With an undivided text, the model will have only one layer and the process will be entirely serialized.
+There are several reasons to divide the corpus into sequences. One reason is to avoid over-fitting: dividing the text allows our model to observe different character combinations so it is less likely to just memorize the text. Another reason is that dividing the text allows the model to process the data more efficiantly. With an undivided text, the model will have only one layer and the process will be entirely serialized, deviding into sequences will allow multiple layers and enables the model to capture complex patterns and structure in the text. RNN's are good at handling sequences of data, but long sequences cause issues like vanishing gradients, and by splitting the text we help the model maintain stable and thus it will be able to learn more global context relations. The dividing into sequences also benfits from being easier to paralize and thus reduce training time. Also, the entire text is very big and loading into GPU memory in its entirety might not be possible as it won't leave the GPU memory to store parameters and gradients for the learning.
 """
 
 part1_q2 = r"""
-The text generation uses the model's hidden state, whice does not depand on the length of the sequences, so generating text of different lengths is possible.
+The text generation uses the model's hidden state, which does not depand on the length of the sequences, so generating text of different lengths is possible.This hidden state acts like a memory that persists beyond the length of the sequences. It carries information form one step to the next and thus allows the model to maintain the context of the sentence and capture patterns of the text to be generated.
 """
 
 part1_q3 = r"""
-The hidden state is passed between batches to improve the learning process. For the hidden state to be relevant to the new batch, the batches need to remain in order. Otherwise out model will pass irrelevant information that could worsen the learning process.
+We do not shuffle the order of batches when training because the hidden state is passed between batches to improve the learning process. For the hidden state to be relevant to the new batch, the batches need to remain in order. If the batches were shuffled, the model would pass irrelevant information, which could worsen the learning process. The order of batches is crucial for maintaining the hidden state variable that the model keeps. shuffling the batches will make the task of learning harder, that is because it is feeding it an unrelated hidden state at the begining of each batch and thus could hurt the long-term memory of the model. In summary: keeping the batches in order ensures that the model can maintain the hidden state effectively thus leading to better training and better text generation.  
 """
 
 part1_q4 = r"""
@@ -211,6 +211,8 @@ This scheme allows slightly broader context for each token as it can see farther
 
 part4_q1 = r"""
 Compared to the model from part 3, which achieved 65% accuracy, this model is far better, with over 85% accuracy in both methods of fine-tuning. This model is more robust, was pre-trained on a larger data set, and was trained by someone with more experience than an undergrad student. It was also fine-tuned to get better results.
+It cannot be garunteed that for every downstream task the fine-tuned model would perform better, as there might be a task which has unusual nature, which contradicts many assumptions the pre-trained model was trained to learn. For example, learning to classify if an IMDB review is positive/negative when the review is written with many grammer mistakes and unusual writing. 
+A model trained to handle unusual language and sentence pattern would probably be better at recognizing the patterns in this task and might perform better if trained from scratch.
 """
 
 part4_q2 = r"""
@@ -219,7 +221,9 @@ The model would not be able to fine-tune using this method. In pre-trained langu
 
 
 part4_q3= r"""
-Since BERT is an encoder only model, and machine translation requires encoder-decoder (for proccessing input text and generating output text), BERT cannot be used for translation tasks.
+Since BERT is an encoder only model, and machine translation requires encoder-decoder (for proccessing input text and generating output text), BERT cannot be used for translation tasks. The changes needed inorder to make it up to the task, is to add a decoder to the architecture in the following way:
+The x_t input would be encoded into latent space using BERT, the output of BERT would be fed into a decoder which its output will be compared with y_t to compute the loss, using some chosen optimizer the weights of the BERT and the DECODER would be updated to learn the task of translation.
+The BERT can also be pre-trained beforehand and only fine-tuned during the translation training. 
 """
 
 part4_q4 = r"""
