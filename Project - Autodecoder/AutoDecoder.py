@@ -18,7 +18,7 @@ class Decoder(nn.Module):
             nn.Linear(512, 1024),
             nn.ReLU(),
             nn.Linear(1024, output_shape[0] * output_shape[1] * output_shape[2]),
-            nn.Sigmoid()  # Output pixels are between 0 and 1
+            #nn.Sigmoid()  # Output pixels are between 0 and 1
         )
 
     def forward(self, z):
