@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
-
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from utils import create_dataloaders
+import matplotlib.pyplot as plt
 
 # Define activations
 ACTIVATIONS = {
@@ -41,8 +41,11 @@ class DecoderCNN(nn.Module):
             modules.append(ACTIVATIONS[activation_type](**activation_params))
             prev_channels = channels
         modules.append(nn.ConvTranspose2d(prev_channels, out_channels, kernel_size=1, stride=1, padding=0, bias=False))
+
+        # Fix 32 to 28 output size
+        modules.append(nn.ConvTranspose2d(out_channels, out_channels, kernel_size=1, stride=1, padding=2, bias=False))
         #modules.append(nn.ConvTranspose2d(prev_channels, out_channels, **conv_params))
-        #modules.append(nn.Sigmoid())  # Output pixel values between 0 and 1
+        modules.append(nn.Sigmoid())  # Output pixel values between 0 and 1
 
         self.cnn = nn.Sequential(*modules)
 
@@ -55,13 +58,15 @@ class AutoDecoder(nn.Module):
         super(AutoDecoder, self).__init__()
         self.latent_dim = latent_dim
         self.output_shape = output_shape
-        self.fc = nn.Linear(latent_dim, 512 * 4 * 4)  # Project latent vector to feature map size
+        self.fc1 = nn.Linear(latent_dim, 512 * 4 * 4)  # Project latent vector to feature map size
         self.decoder = DecoderCNN(512, output_shape[0])
 
     def forward(self, z):
-        h = self.fc(z)
+        h = self.fc1(z)
         h = h.view(-1, 512, 4, 4)  # Reshape to match the input of the CNN decoder
-        return self.decoder(h)
+        decoder_res=self.decoder(h)*255
+        res= decoder_res.view(-1,28,28)
+        return res
 
 def train_auto_decoder(model, train_dl, optimizer, latents, device, epochs=10):
     model.train()
@@ -83,6 +88,34 @@ def train_auto_decoder(model, train_dl, optimizer, latents, device, epochs=10):
         avg_loss = total_loss / len(train_dl)
         print(f"Epoch [{epoch+1}/{epochs}], Loss: {avg_loss:.4f}")
 
+def visualize_reconstructions(model, test_dl, latents, device, num_samples=10):
+    model.eval()
+    with torch.no_grad():
+        # Get a batch of test data
+        indices, x = next(iter(test_dl))
+        x = x.to(device).float()
+        z = latents[indices].to(device)
+
+        # Generate reconstructions
+        x_hat = model(z)
+
+        # Move tensors to CPU for visualization
+        x = x.cpu()
+        x_hat = x_hat.cpu()
+
+        # Plot original and reconstructed images
+        fig, axes = plt.subplots(2, num_samples, figsize=(20, 4))
+        for i in range(num_samples):
+            axes[0, i].imshow(x[i].squeeze(), cmap='gray')
+            axes[0, i].axis('off')
+            axes[0, i].set_title('Original')
+
+            axes[1, i].imshow(x_hat[i].squeeze(), cmap='gray')
+            axes[1, i].axis('off')
+            axes[1, i].set_title('Reconstructed')
+
+        plt.tight_layout()
+        plt.show()
 '''
 
 class Decoder(nn.Module):
