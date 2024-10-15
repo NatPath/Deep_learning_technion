@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from utils import create_dataloaders
+from evaluate import reconstruction_loss
 import matplotlib.pyplot as plt
 
 # Define activations
@@ -64,29 +65,45 @@ class AutoDecoder(nn.Module):
     def forward(self, z):
         h = self.fc1(z)
         h = h.view(-1, 512, 4, 4)  # Reshape to match the input of the CNN decoder
-        decoder_res=self.decoder(h)*255
+        decoder_res=self.decoder(h)
         res= decoder_res.view(-1,28,28)
-        return res
+        return res*255.0
 
-def train_auto_decoder(model, train_dl, optimizer, latents, device, epochs=10):
+def train_auto_decoder(model, train_dl, optimizer, train_latents, device, epochs=10):
     model.train()
-    reconstruction_loss = nn.MSELoss()
+    criterion = reconstruction_loss
+    train_losses = []
 
     for epoch in range(epochs):
-        total_loss = 0
+        total_train_loss = 0
         for i, (indices, x) in enumerate(train_dl):
-            x = x.to(device).float()
-            z = latents[indices].to(device)  # Get the latent vectors for the current batch
+            x = x.to(device).float() 
+            z = train_latents[indices].to(device)
+            
             optimizer.zero_grad()
             x_hat = model(z)
-            loss = reconstruction_loss(x_hat, x)
+            loss = criterion(x_hat, x)
             loss.backward()
             optimizer.step()
 
-            total_loss += loss.item()
+            total_train_loss += loss.item()
 
-        avg_loss = total_loss / len(train_dl)
-        print(f"Epoch [{epoch+1}/{epochs}], Loss: {avg_loss:.4f}")
+        avg_train_loss = total_train_loss / len(train_dl)
+        train_losses.append(avg_train_loss)
+
+        print(f"Epoch [{epoch+1}/{epochs}], Train Loss: {avg_train_loss:.4f}")
+
+    return train_losses
+
+def plot_learning_curve(train_losses):
+    plt.figure(figsize=(10, 5))
+    plt.plot(train_losses, label='Train Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Learning Curve')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
 
 def visualize_reconstructions(model, test_dl, latents, device, num_samples=10):
     model.eval()
@@ -116,7 +133,6 @@ def visualize_reconstructions(model, test_dl, latents, device, num_samples=10):
 
         plt.tight_layout()
         plt.show()
-'''
 
 class Decoder(nn.Module):
     def __init__(self, latent_dim, output_shape):
@@ -147,5 +163,3 @@ class AutoDecoder(nn.Module):
 
     def forward(self, z):
         return self.decoder(z)
-
-'''
