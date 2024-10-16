@@ -134,32 +134,32 @@ def visualize_reconstructions(model, test_dl, latents, device, num_samples=10):
         plt.tight_layout()
         plt.show()
 
-class Decoder(nn.Module):
-    def __init__(self, latent_dim, output_shape):
-        super(Decoder, self).__init__()
-        self.output_shape = output_shape
+# class Decoder(nn.Module):
+#     def __init__(self, latent_dim, output_shape):
+#         super(Decoder, self).__init__()
+#         self.output_shape = output_shape
 
-        self.decoder = nn.Sequential(
-            nn.Linear(latent_dim, 256),
-            nn.ReLU(),
-            nn.Linear(256, 512),
-            nn.ReLU(),
-            nn.Linear(512, 1024),
-            nn.ReLU(),
-            nn.Linear(1024, output_shape[0] * output_shape[1] * output_shape[2]),
-            #nn.Sigmoid()*255  # Output pixels are between 0 and 1
-        )
+#         self.decoder = nn.Sequential(
+#             nn.Linear(latent_dim, 256),
+#             nn.ReLU(),
+#             nn.Linear(256, 512),
+#             nn.ReLU(),
+#             nn.Linear(512, 1024),
+#             nn.ReLU(),
+#             nn.Linear(1024, output_shape[0] * output_shape[1] * output_shape[2]),
+#             #nn.Sigmoid()*255  # Output pixels are between 0 and 1
+#         )
 
-    def forward(self, z):
-        x_hat = self.decoder(z)
-        x_hat = x_hat.view(-1, *self.output_shape)
-        return x_hat
+#     def forward(self, z):
+#         x_hat = self.decoder(z)
+#         x_hat = x_hat.view(-1, *self.output_shape)
+#         return x_hat
 
-class AutoDecoder(nn.Module):
-    def __init__(self, latent_dim, output_shape):
-        super(AutoDecoder, self).__init__()
-        self.latent_dim = latent_dim
-        self.decoder = Decoder(latent_dim, output_shape)
+# class AutoDecoder(nn.Module):
+#     def __init__(self, latent_dim, output_shape):
+#         super(AutoDecoder, self).__init__()
+#         self.latent_dim = latent_dim
+#         self.decoder = Decoder(latent_dim, output_shape)
 
-    def forward(self, z):
-        return self.decoder(z)
+#     def forward(self, z):
+#         return self.decoder(z)
