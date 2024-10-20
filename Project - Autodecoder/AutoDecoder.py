@@ -134,6 +134,28 @@ def visualize_reconstructions(model, test_dl, latents, device, num_samples=10):
         plt.tight_layout()
         plt.show()
 
+def visualize_from_latents(model, latents, device, num_samples=10):
+    model.eval()
+    with torch.no_grad():
+        # Ensure we only take the number of samples requested
+        latents = latents[:num_samples].to(device)
+
+        # Generate reconstructions from the provided latents
+        x_hat = model(latents)
+
+        # Move tensors to CPU for visualization
+        x_hat = x_hat.cpu()
+
+        # Plot reconstructed images
+        fig, axes = plt.subplots(1, num_samples, figsize=(20, 4))
+        for i in range(num_samples):
+            axes[i].imshow(x_hat[i].squeeze(), cmap='gray')
+            axes[i].axis('off')
+            axes[i].set_title('Reconstructed')
+
+        plt.tight_layout()
+        plt.show()
+
 # class Decoder(nn.Module):
 #     def __init__(self, latent_dim, output_shape):
 #         super(Decoder, self).__init__()
