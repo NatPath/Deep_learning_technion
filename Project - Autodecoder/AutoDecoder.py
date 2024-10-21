@@ -94,6 +94,7 @@ def train_auto_decoder(model, train_dl, optimizer, train_latents, device, epochs
         print(f"Epoch [{epoch+1}/{epochs}], Train Loss: {avg_train_loss:.4f}")
 
     return train_losses
+    
 
 def plot_learning_curve(train_losses):
     plt.figure(figsize=(10, 5))
