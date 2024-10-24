@@ -57,7 +57,8 @@ def kl_divergence(distribution, *args):
 
 def train_variational_auto_decoder(model, train_dl, optimizer, dist_params, device, distribution='gaussian', epochs=10, beta=1.0):
     model.train()
-    criterion = rec_loss
+    # criterion = rec_loss
+    criterion = nn.MSELoss()
     train_losses = []
 
     for epoch in range(epochs):
@@ -151,3 +152,13 @@ def visualize_vad_from_dist_params(model, dist_params, device, distribution='gau
 
         plt.tight_layout()
         plt.show()
+
+def plot_learning_curve(train_losses):
+    plt.figure(figsize=(10, 5))
+    plt.plot(train_losses, label='Train Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Learning Curve (Variational AutoDecoder)')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
