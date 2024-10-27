@@ -35,15 +35,24 @@ def reparameterize(distribution, *args):
         return mu + eps * std
     elif distribution == 'exponential':
         log_rate = args[0]
-        #log_rate = torch.clamp(log_rate, max=10)  # Prevent exp overflow
         rate = torch.exp(log_rate)
-        eps= torch.rand_like(log_rate)
+        eps = torch.rand_like(log_rate) + 1e-6
         return -torch.log(eps) / rate
     elif distribution == 'uniform':
         low, log_length = args
         length = torch.exp(log_length)
-        eps= torch.rand_like(low)
+        eps = torch.rand_like(low)
         return low + (length) * eps
+    elif distribution == 'multivariate_gaussian':
+        mu, L = args
+        eps = torch.randn_like(mu)
+        return mu + torch.matmul(L, eps.unsqueeze(-1)).squeeze(-1)
+    elif distribution == 'laplace':
+        mu, log_b = args
+        b = torch.exp(log_b)
+        u = torch.rand_like(mu) - 0.5
+        epsilon = 1e-6
+        return mu - b * torch.sign(u) * torch.log(1 - 2 * torch.abs(u)+epsilon)
     else:
         raise ValueError("Unsupported distribution")
 
@@ -53,17 +62,31 @@ def kl_divergence(distribution, *args):
         return -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=1)
     elif distribution == 'exponential':
         log_rate = args[0]
-        return torch.sum(log_rate + torch.exp(-log_rate)-1, dim=1)
+        return torch.sum(log_rate + torch.exp(-log_rate) - 1, dim=1)
     elif distribution == 'uniform':
-        low, high = args
-        return torch.sum(torch.log(high - low), dim=1)
+        low, log_length = args
+        length = torch.exp(log_length)
+        return torch.sum(torch.log(length), dim=1)
+    elif distribution == 'multivariate_gaussian':
+        mu, L = args
+        n = mu.size(-1)
+        log_det_cov = 2 * torch.sum(torch.log(torch.abs(torch.diagonal(L, dim1=-2, dim2=-1) + 1e-6)), dim=-1)
+        trace_cov = torch.sum(torch.square(L), dim=(-2, -1))
+        mahalanobis = torch.sum(torch.square(mu), dim=-1)
+        kl_div = 0.5 * (log_det_cov - n + trace_cov + mahalanobis)
+        return kl_div
+    elif distribution == 'laplace':
+        log_abs_mu, log_b = args
+        abs_mu = torch.exp(log_abs_mu)
+        b = torch.exp(log_b)
+        return torch.sum(b*torch.exp(-abs_mu/b)-1-log_b+abs_mu, dim=1)
+        # return torch.sum(b*torch.exp(-torch.abs(mu)/b)-log_b-1+torch.abs(mu), dim=1)
     else:
         raise ValueError("Unsupported distribution")
 
 def train_variational_auto_decoder(model, train_dl, optimizer, dist_params, device, distribution='gaussian', epochs=10, beta=1.0):
     model.train()
     criterion = rec_loss
-    # criterion = nn.MSELoss()
     train_losses = []
 
     for epoch in range(epochs):
@@ -72,20 +95,16 @@ def train_variational_auto_decoder(model, train_dl, optimizer, dist_params, devi
             x = x.to(device).float()
             batch_size = x.size(0)
             
-            # Get distribution parameters for this batch
-            batch_dist_params = [param[indices].to(device) for param in dist_params]
+            if distribution in ['multivariate_gaussian', 'laplace']:
+                batch_dist_params = [param[indices].to(device) for param in dist_params]
+            else:
+                batch_dist_params = [param[indices].to(device) for param in dist_params]
             
             optimizer.zero_grad()
             z = reparameterize(distribution, *batch_dist_params)
-            # print(z)
-            # print(type(z))
             x_hat = model(z)
-            # print(x_hat)
             reconstruction_loss = criterion(x_hat, x)
-            # print(reconstruction_loss)
             kl_div = kl_divergence(distribution, *batch_dist_params).mean()
-            # print(kl_div)
-            # Total loss is reconstruction loss + beta * KL divergence
             loss = reconstruction_loss + beta * kl_div
             loss.backward()
             optimizer.step()
@@ -184,8 +203,17 @@ def evaluate_vad_model(model, test_dl, opt, dist_params, epochs, device, distrib
             elif distribution == 'uniform':
                 low, log_length = dist_params
                 latents = reparameterize(distribution, low[i], log_length[i])
+            elif distribution == 'multivariate_gaussian':
+                mu, L = dist_params
+                latents = reparameterize(distribution, mu[i], L[i])
+            elif distribution == 'laplace':
+                mu, log_b = dist_params
+                latents = reparameterize(distribution, mu[i], log_b[i])
             x_rec = model(latents)
             loss = reconstruction_loss(x, x_rec)
+            if torch.isnan(loss):
+                print(f"Loss is nan at epoch {epoch}, batch {i}")
+                break
             opt.zero_grad()
             loss.backward()
             opt.step()
@@ -204,6 +232,12 @@ def evaluate_vad_model(model, test_dl, opt, dist_params, epochs, device, distrib
             elif distribution == 'uniform':
                 low, log_length = dist_params
                 latents = reparameterize(distribution, low[i], log_length[i])
+            elif distribution == 'multivariate_gaussian':
+                mu, L = dist_params
+                latents = reparameterize(distribution, mu[i], L[i])
+            elif distribution == 'laplace':
+                mu, log_b = dist_params
+                latents = reparameterize(distribution, mu[i], log_b[i])
             x_rec = model(latents)
             loss = reconstruction_loss(x, x_rec)
             losses.append(loss.item())
@@ -222,6 +256,12 @@ def generate_latents_from_dist_params(dist_params, distribution='gaussian'):
     elif distribution == 'uniform':
         low, log_length = dist_params
         return reparameterize(distribution, low, log_length)
+    elif distribution == 'multivariate_gaussian':
+        mu, L = dist_params
+        return reparameterize(distribution, mu, L)
+    elif distribution == 'laplace':
+        mu, log_b = dist_params
+        return reparameterize(distribution, mu, log_b)
     else:
         raise ValueError("Unsupported distribution")
 
