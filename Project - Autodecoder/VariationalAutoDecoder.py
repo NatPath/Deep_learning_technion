@@ -33,12 +33,17 @@ def reparameterize(distribution, *args):
         std = torch.exp(0.5 * log_var)
         eps = torch.randn_like(std)
         return mu + eps * std
-    elif distribution == 'poisson':
-        rate = args[0]
-        return dist.Poisson(rate).rsample()
+    elif distribution == 'exponential':
+        log_rate = args[0]
+        #log_rate = torch.clamp(log_rate, max=10)  # Prevent exp overflow
+        rate = torch.exp(log_rate)
+        eps= torch.rand_like(log_rate)
+        return -torch.log(eps) / rate
     elif distribution == 'uniform':
-        low, high = args
-        return dist.Uniform(low, high).rsample()
+        low, log_length = args
+        length = torch.exp(log_length)
+        eps= torch.rand_like(low)
+        return low + (length) * eps
     else:
         raise ValueError("Unsupported distribution")
 
@@ -46,9 +51,9 @@ def kl_divergence(distribution, *args):
     if distribution == 'gaussian':
         mu, log_var = args
         return -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=1)
-    elif distribution == 'poisson':
-        rate = args[0]
-        return torch.sum(rate * (torch.log(rate) - 1) + torch.lgamma(rate + 1), dim=1)
+    elif distribution == 'exponential':
+        log_rate = args[0]
+        return torch.sum(log_rate + torch.exp(-log_rate)-1, dim=1)
     elif distribution == 'uniform':
         low, high = args
         return torch.sum(torch.log(high - low), dim=1)
@@ -57,8 +62,8 @@ def kl_divergence(distribution, *args):
 
 def train_variational_auto_decoder(model, train_dl, optimizer, dist_params, device, distribution='gaussian', epochs=10, beta=1.0):
     model.train()
-    # criterion = rec_loss
-    criterion = nn.MSELoss()
+    criterion = rec_loss
+    # criterion = nn.MSELoss()
     train_losses = []
 
     for epoch in range(epochs):
@@ -162,3 +167,69 @@ def plot_learning_curve(train_losses):
     plt.legend()
     plt.grid(True)
     plt.show()
+
+def evaluate_vad_model(model, test_dl, opt, dist_params, epochs, device, distribution='gaussian'):
+    reconstruction_loss = rec_loss
+    
+    for epoch in range(epochs):
+        for i, x in test_dl:
+            i = i.to(device)
+            x = x.to(device)
+            if distribution == 'gaussian':
+                mu, log_var = dist_params
+                latents = reparameterize(distribution, mu[i], log_var[i])
+            elif distribution == 'exponential':
+                rate = dist_params[0]
+                latents = reparameterize(distribution, rate[i])
+            elif distribution == 'uniform':
+                low, log_length = dist_params
+                latents = reparameterize(distribution, low[i], log_length[i])
+            x_rec = model(latents)
+            loss = reconstruction_loss(x, x_rec)
+            opt.zero_grad()
+            loss.backward()
+            opt.step()
+
+    losses = []
+    with torch.no_grad():
+        for i, x in test_dl:
+            i = i.to(device)
+            x = x.to(device)
+            if distribution == 'gaussian':
+                mu, log_var = dist_params
+                latents = reparameterize(distribution, mu[i], log_var[i])
+            elif distribution == 'exponential':
+                rate = dist_params[0]
+                latents = reparameterize(distribution, rate[i])
+            elif distribution == 'uniform':
+                low, log_length = dist_params
+                latents = reparameterize(distribution, low[i], log_length[i])
+            x_rec = model(latents)
+            loss = reconstruction_loss(x, x_rec)
+            losses.append(loss.item())
+
+        final_loss = sum(losses) / len(losses)
+
+    return final_loss
+
+def generate_latents_from_dist_params(dist_params, distribution='gaussian'):
+    if distribution == 'gaussian':
+        mu, log_var = dist_params
+        return reparameterize(distribution, mu, log_var)
+    elif distribution == 'exponential':
+        rate = dist_params[0]
+        return reparameterize(distribution, rate)
+    elif distribution == 'uniform':
+        low, log_length = dist_params
+        return reparameterize(distribution, low, log_length)
+    else:
+        raise ValueError("Unsupported distribution")
+
+class LatentGenerator(nn.Module):
+    def __init__(self, dist_params, distribution='gaussian'):
+        super(LatentGenerator, self).__init__()
+        self.dist_params = nn.ParameterList([nn.Parameter(param) for param in dist_params])
+        self.distribution = distribution
+
+    def forward(self):
+        return generate_latents_from_dist_params(self.dist_params, self.distribution)
